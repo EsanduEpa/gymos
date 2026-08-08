@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "gymos_secret_key_production_level_auth_2026_super_secure"
   const isProduction = process.env.NODE_ENV === "production"
   
