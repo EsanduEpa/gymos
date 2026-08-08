@@ -1,0 +1,402 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  GYM_OWNER
+  PERSONAL_TRAINER
+  GYM_MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum TrainerLevel {
+  LEVEL_1
+  LEVEL_2
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum SessionType {
+  IN_PERSON
+  VIRTUAL
+  INTRODUCTORY
+}
+
+enum ShiftStatus {
+  IN_SHIFT
+  OFF_SHIFT
+}
+
+enum PackStatus {
+  ACTIVE
+  EXHAUSTED
+  EXPIRED
+}
+
+enum PayPeriodStatus {
+  OPEN
+  CLOSED
+  APPROVED
+}
+
+enum HireRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum RevenueCategory {
+  MEMBERSHIP
+  PT_SESSION
+  ADD_ON
+}
+
+enum ExpenseCategory {
+  RENT
+  UTILITIES
+  EQUIPMENT
+  MARKETING
+  SALARIES
+  MAINTENANCE
+  OTHER
+}
+
+model Gym {
+  id                      String   @id @default(cuid())
+  name                    String
+  address                 String?
+  logo                    String?
+  phone                   String?
+  email                   String?
+  operatingHours          String?  // JSON string
+  cancellationWindowHours Int      @default(24)
+  noShowDeduction         Boolean  @default(true)
+  lateCancelDeduction     Boolean  @default(true)
+  minSessionDuration      Int      @default(20) // minutes
+  level1BaseRate          Float    @default(0.4)  // 40%
+  level2BaseRate          Float    @default(0.5)  // 50%
+  offShiftPremium         Float    @default(0.1)  // 10%
+  payPeriod               String   @default("MONTHLY") // WEEKLY or MONTHLY
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  users                   User[]
+  membershipPlans         MembershipPlan[]
+  sessions                PTSession[]
+  revenues                RevenueRecord[]
+  expenses                ExpenseRecord[]
+  auditLogs               AuditLog[]
+  budgets                 CategoryBudget[]
+  payPeriods              PayPeriod[]
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  phone            String?
+  password         String   // hashed
+  fullName         String
+  role             Role
+  gymId            String?
+  gym              Gym?     @relation(fields: [gymId], references: [id])
+
+  // Member-specific
+  dateOfBirth      DateTime?
+  emergencyContact String?
+  healthNotes      String?
+  photo            String?
+  memberStatus     MemberStatus?
+
+  // Trainer-specific
+  trainerLevel     TrainerLevel?
+  specialisations  String?  // JSON array string
+  yearsExperience  Int?
+  shiftStart       String?   // "09:00"
+  shiftEnd         String?   // "17:00"
+  bio              String?
+  ratingAvg        Float?    @default(0)
+  trainerStatus    String?   @default("ACTIVE")
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  memberships         Membership[]
+  sessionPacks        SessionPack[]
+  sessionsClient      PTSession[] @relation("ClientSessions")
+  sessionsTrainer     PTSession[] @relation("TrainerSessions")
+  workoutPlansTrainer WorkoutPlan[] @relation("WorkoutPlanTrainer")
+  workoutPlansClient  WorkoutPlan[] @relation("WorkoutPlanClient")
+  mealPlansTrainer    MealPlan[] @relation("MealPlanTrainer")
+  mealPlansClient     MealPlan[] @relation("MealPlanClient")
+  progressPhotos      ProgressPhoto[]
+  bodyMetrics         BodyMetric[]
+  hireRequestsClient  HireRequest[] @relation("HireClient")
+  hireRequestsTrainer HireRequest[] @relation("HireTrainer")
+  payRecords          PayRecord[]
+  messagesSent        Message[] @relation("MessageSender")
+  messagesReceived    Message[] @relation("MessageReceiver")
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+}
+
+model MembershipPlan {
+  id           String   @id @default(cuid())
+  gymId        String
+  gym          Gym      @relation(fields: [gymId], references: [id])
+  name         String
+  description  String?
+  price        Float
+  durationDays Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships  Membership[]
+}
+
+model Membership {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  membershipPlanId String
+  plan             MembershipPlan @relation(fields: [membershipPlanId], references: [id])
+  startDate        DateTime
+  endDate          DateTime
+  status           MemberStatus @default(ACTIVE)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model SessionPack {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  totalSessions     Int
+  remainingSessions Int
+  status            PackStatus @default(ACTIVE)
+  purchaseDate      DateTime @default(now())
+  expiryDate        DateTime
+  price             Float?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model PTSession {
+  id          String   @id @default(cuid())
+  gymId       String
+  gym         Gym      @relation(fields: [gymId], references: [id])
+  trainerId   String
+  trainer     User     @relation("TrainerSessions", fields: [trainerId], references: [id])
+  clientId    String
+  client      User     @relation("ClientSessions", fields: [clientId], references: [id])
+  scheduledAt DateTime
+  duration    Int      // minutes
+  type        SessionType @default(IN_PERSON)
+  status      SessionStatus @default(SCHEDULED)
+  notes       String?
+  shiftStatus ShiftStatus?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  payRecords  PayRecord[]
+}
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  trainerId   String
+  trainer     User     @relation("WorkoutPlanTrainer", fields: [trainerId], references: [id])
+  clientId    String
+  client      User     @relation("WorkoutPlanClient", fields: [clientId], references: [id])
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exercises   WorkoutExercise[]
+}
+
+model WorkoutExercise {
+  id            String   @id @default(cuid())
+  workoutPlanId String
+  workoutPlan   WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  name          String
+  sets          Int
+  reps          Int?
+  weight        Float?
+  duration      Int? // minutes
+  notes         String?
+}
+
+model MealPlan {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   User     @relation("MealPlanTrainer", fields: [trainerId], references: [id])
+  clientId  String
+  client    User     @relation("MealPlanClient", fields: [clientId], references: [id])
+  name      String
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries   MealPlanEntry[]
+}
+
+model MealPlanEntry {
+  id         String   @id @default(cuid())
+  mealPlanId String
+  mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int      // 0-6
+  mealType   String   // Breakfast, Lunch, Dinner, Snack
+  foodItem   String
+  calories   Int?
+  protein    Float?
+  carbs      Float?
+  fats       Float?
+}
+
+model ProgressPhoto {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  url       String
+  dateTaken DateTime @default(now())
+  notes     String?
+}
+
+model BodyMetric {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  dateRecorded DateTime @default(now())
+  weight       Float?
+  bodyFat      Float?
+  muscleMass   Float?
+  notes        String?
+}
+
+model HireRequest {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    User     @relation("HireClient", fields: [clientId], references: [id])
+  trainerId String
+  trainer   User     @relation("HireTrainer", fields: [trainerId], references: [id])
+  status    HireRequestStatus @default(PENDING)
+  message   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PayPeriod {
+  id        String   @id @default(cuid())
+  gymId     String
+  gym       Gym      @relation(fields: [gymId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  status    PayPeriodStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payRecords PayRecord[]
+}
+
+model PayRecord {
+  id          String   @id @default(cuid())
+  trainerId   String
+  trainer     User     @relation(fields: [trainerId], references: [id])
+  payPeriodId String
+  payPeriod   PayPeriod @relation(fields: [payPeriodId], references: [id])
+  sessionId   String?
+  session     PTSession? @relation(fields: [sessionId], references: [id])
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RevenueRecord {
+  id          String   @id @default(cuid())
+  gymId       String
+  gym         Gym      @relation(fields: [gymId], references: [id])
+  amount      Float
+  category    RevenueCategory
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ExpenseRecord {
+  id          String   @id @default(cuid())
+  gymId       String
+  gym         Gym      @relation(fields: [gymId], references: [id])
+  amount      Float
+  category    ExpenseCategory
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CategoryBudget {
+  id        String   @id @default(cuid())
+  gymId     String
+  gym       Gym      @relation(fields: [gymId], references: [id])
+  category  ExpenseCategory
+  amount    Float
+  month     DateTime // represents the month/year
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("MessageSender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("MessageReceiver", fields: [receiverId], references: [id])
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  gymId     String?
+  gym       Gym?     @relation(fields: [gymId], references: [id])
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id])
+  action    String
+  resource  String
+  details   String?
+  createdAt DateTime @default(now())
+}
