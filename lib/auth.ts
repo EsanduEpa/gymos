@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma"
 import { Role } from "@prisma/client"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "gymos_secret_key_production_level_auth_2026_super_secure",
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
