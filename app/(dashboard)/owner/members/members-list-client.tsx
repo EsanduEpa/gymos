@@ -64,7 +64,7 @@ export function MembersListClient({ members, plans }: MembersListClientProps) {
         const activeMembership = row.memberships[0]
         if (!activeMembership?.endDate) return <span className="text-[#8B8E98]">—</span>
         return (
-          <span className="text-[#4A4D58]">
+          <span className="text-[#4A4D58]" suppressHydrationWarning>
             {new Date(activeMembership.endDate).toLocaleDateString()}
           </span>
         )

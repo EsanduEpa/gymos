@@ -5,7 +5,8 @@ import Link from "next/link"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { updateMemberStatus } from "@/app/actions/members"
-import { ArrowLeft, Calendar, User, ShieldAlert, CheckCircle, Clock } from "lucide-react"
+import { issueSessionPack } from "@/app/actions/packs"
+import { ArrowLeft, Calendar, User, ShieldAlert, CheckCircle, Clock, Plus, Dumbbell } from "lucide-react"
 
 interface MemberProfileClientProps {
   member: any
@@ -14,8 +15,10 @@ interface MemberProfileClientProps {
 export function MemberProfileClient({ member }: MemberProfileClientProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "attendance" | "payments" | "progress">("overview")
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [packModalOpen, setPackModalOpen] = useState(false)
   const [targetStatus, setTargetStatus] = useState<"SUSPENDED" | "INACTIVE" | "ACTIVE">("SUSPENDED")
   const [loading, setLoading] = useState(false)
+  const [packMsg, setPackMsg] = useState<string | null>(null)
 
   const activeMembership = member.memberships[0]
   const activePack = member.sessionPacks[0]
@@ -25,6 +28,22 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
     await updateMemberStatus(member.id, targetStatus as any)
     setLoading(false)
     setDialogOpen(false)
+  }
+
+  const handleIssuePackSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setPackMsg(null)
+    const formData = new FormData(e.currentTarget)
+    formData.append("userId", member.id)
+    const res = await issueSessionPack(formData)
+    setLoading(false)
+
+    if (res.error) {
+      setPackMsg(res.error)
+    } else {
+      setPackModalOpen(false)
+    }
   }
 
   const triggerDialog = (status: "SUSPENDED" | "INACTIVE" | "ACTIVE") => {
@@ -142,13 +161,13 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
               </div>
               <div className="flex justify-between py-1.5 border-b border-[#F5F4F5]">
                 <span className="text-[#8B8E98]">Start Date:</span>
-                <span className="font-medium text-[#4A4D58]">
+                <span className="font-medium text-[#4A4D58]" suppressHydrationWarning>
                   {activeMembership?.startDate ? new Date(activeMembership.startDate).toLocaleDateString() : "—"}
                 </span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-[#F5F4F5]">
                 <span className="text-[#8B8E98]">Expiry Date:</span>
-                <span className="font-medium text-[#4A4D58]">
+                <span className="font-medium text-[#4A4D58]" suppressHydrationWarning>
                   {activeMembership?.endDate ? new Date(activeMembership.endDate).toLocaleDateString() : "—"}
                 </span>
               </div>
@@ -157,9 +176,17 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
 
           {/* Session Pack Card */}
           <div className="bg-white rounded-xl border border-[#E1E1E4] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-bold uppercase text-[#8B8E98] tracking-wider">
-              PT Session Pack Balance
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase text-[#8B8E98] tracking-wider">
+                PT Session Pack Balance
+              </h2>
+              <button
+                onClick={() => setPackModalOpen(true)}
+                className="px-2.5 py-1 bg-[#DDF5E7] hover:bg-[#BBEBD0] text-[#007A35] text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" /> Issue New Pack
+              </button>
+            </div>
 
             {activePack ? (
               <div className="space-y-3 text-xs">
@@ -229,6 +256,82 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
         confirmText={`Change Status to ${targetStatus}`}
         isDestructive={targetStatus !== "ACTIVE"}
       />
+
+      {/* Issue Session Pack Modal (FR-064 / Deferred Revenue) */}
+      {packModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#E1E1E4] max-w-md w-full p-6 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#171B28]">Issue PT Session Pack</h3>
+            <p className="text-xs text-[#8B8E98]">
+              Issue a personal training session pack. Upfront revenue will be tracked as Deferred Revenue (BR-064).
+            </p>
+
+            {packMsg && (
+              <p className="text-xs text-[#D71920] bg-[#FDE4E4] p-2.5 rounded-lg border border-[#F8B4B4]">
+                {packMsg}
+              </p>
+            )}
+
+            <form onSubmit={handleIssuePackSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                  Total Sessions *
+                </label>
+                <input
+                  type="number"
+                  name="totalSessions"
+                  required
+                  defaultValue={10}
+                  className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                  Pack Total Price ($) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="price"
+                  required
+                  defaultValue={450.00}
+                  className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                  Validity Duration (Days)
+                </label>
+                <input
+                  type="number"
+                  name="durationDays"
+                  defaultValue={90}
+                  className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-[#E1E1E4] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPackModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-[#4A4D58] bg-[#F5F4F5] hover:bg-[#EAEAEA] rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-[#007A35] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-sm"
+                >
+                  {loading ? "Issuing Pack..." : "Confirm & Issue Pack"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

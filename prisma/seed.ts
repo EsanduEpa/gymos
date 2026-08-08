@@ -1,4 +1,4 @@
-import { PrismaClient, Role, TrainerLevel, MemberStatus } from "@prisma/client"
+import { PrismaClient, Role, TrainerLevel, MemberStatus, SessionStatus, SessionType, ShiftStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
@@ -86,7 +86,7 @@ async function main() {
   })
 
   // 5. Create Trainers
-  await prisma.user.upsert({
+  const trainer1 = await prisma.user.upsert({
     where: { email: "trainer1@fitgym.com" },
     update: {},
     create: {
@@ -105,7 +105,7 @@ async function main() {
     },
   })
 
-  await prisma.user.upsert({
+  const trainer2 = await prisma.user.upsert({
     where: { email: "trainer2@fitgym.com" },
     update: {},
     create: {
@@ -133,6 +133,8 @@ async function main() {
     { name: "Michael Brown", email: "member5@fitgym.com", status: MemberStatus.SUSPENDED },
   ]
 
+  const createdMembers = []
+
   for (const m of memberNames) {
     const member = await prisma.user.upsert({
       where: { email: m.email },
@@ -149,8 +151,8 @@ async function main() {
         phone: "+94 77 000 1111",
       },
     })
+    createdMembers.push(member)
 
-    // Attach membership record
     await prisma.membership.create({
       data: {
         userId: member.id,
@@ -162,7 +164,88 @@ async function main() {
     })
   }
 
-  console.log("Database successfully seeded with SuperAdmin, Gym Owner, 2 Trainers, 5 Members, and 2 Membership Plans!")
+  // 7. Create Session Packs for Members
+  await prisma.sessionPack.create({
+    data: {
+      userId: createdMembers[0].id, // John Doe
+      totalSessions: 10,
+      remainingSessions: 8,
+      status: "ACTIVE",
+      expiryDate: new Date("2026-12-31"),
+      price: 450.0,
+    },
+  })
+
+  await prisma.sessionPack.create({
+    data: {
+      userId: createdMembers[1].id, // Jane Smith
+      totalSessions: 5,
+      remainingSessions: 4,
+      status: "ACTIVE",
+      expiryDate: new Date("2026-12-31"),
+      price: 250.0,
+    },
+  })
+
+  // 8. Create Trainer Hire Requests
+  await prisma.hireRequest.create({
+    data: {
+      clientId: createdMembers[0].id,
+      trainerId: trainer1.id,
+      status: "ACCEPTED",
+      message: "Goal: Build upper body muscle strength",
+    },
+  })
+
+  await prisma.hireRequest.create({
+    data: {
+      clientId: createdMembers[1].id,
+      trainerId: trainer2.id,
+      status: "ACCEPTED",
+      message: "Goal: Post-rehab mobility and weight loss",
+    },
+  })
+
+  await prisma.hireRequest.create({
+    data: {
+      clientId: createdMembers[2].id,
+      trainerId: trainer1.id,
+      status: "PENDING",
+      message: "Looking for 1-on-1 powerlifting coaching",
+    },
+  })
+
+  // 9. Create Sample PT Sessions
+  await prisma.pTSession.create({
+    data: {
+      gymId: gym.id,
+      trainerId: trainer1.id,
+      clientId: createdMembers[0].id,
+      scheduledAt: new Date(Date.now() + 2 * 3600000), // Today in 2 hrs
+      duration: 60,
+      type: SessionType.IN_PERSON,
+      status: SessionStatus.SCHEDULED,
+      shiftStatus: ShiftStatus.IN_SHIFT,
+      fee: 50.0,
+    },
+  })
+
+  await prisma.pTSession.create({
+    data: {
+      gymId: gym.id,
+      trainerId: trainer2.id,
+      clientId: createdMembers[1].id,
+      scheduledAt: new Date(Date.now() - 24 * 3600000), // Yesterday
+      duration: 60,
+      type: SessionType.IN_PERSON,
+      status: SessionStatus.COMPLETED,
+      shiftStatus: ShiftStatus.IN_SHIFT,
+      fee: 50.0,
+      notes: "Completed 4 sets of squat and deadlift.",
+    },
+  })
+
+  console.log("Database successfully seeded with Part 3 PT Sessions, Session Packs, and Hire Requests!")
 }
 
 main()

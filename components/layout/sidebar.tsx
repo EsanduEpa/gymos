@@ -14,6 +14,7 @@ import {
   ClipboardList,
   Wallet,
   LogOut,
+  UserCheck,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -37,9 +38,9 @@ export function Sidebar({ role, fullName }: SidebarProps) {
   ]
 
   const trainerNav = [
-    { name: "Schedule", href: "/trainer", icon: Calendar },
+    { name: "Schedule", href: "/trainer/schedule", icon: Calendar },
     { name: "Clients", href: "/trainer/clients", icon: Users },
-    { name: "Plans", href: "/trainer/plans", icon: ClipboardList },
+    { name: "Hire Requests", href: "/trainer/hire-requests", icon: UserCheck },
     { name: "Earnings", href: "/trainer/earnings", icon: Wallet },
   ]
 

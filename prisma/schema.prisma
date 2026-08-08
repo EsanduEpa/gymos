@@ -210,8 +210,12 @@ model PTSession {
   duration    Int      // minutes
   type        SessionType @default(IN_PERSON)
   status      SessionStatus @default(SCHEDULED)
+  fee         Float    @default(50.0)
+  noShow      Boolean  @default(false)
   notes       String?
   shiftStatus ShiftStatus?
+  startedAt   DateTime?
+  endedAt     DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
