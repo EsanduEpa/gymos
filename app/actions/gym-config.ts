@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -41,14 +42,12 @@ export async function updateGymProfile(formData: FormData) {
       data: validated.data,
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "UPDATE_GYM_PROFILE",
-        resource: "Gym",
-        details: `Updated gym profile details for ${validated.data.name}`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "GYM_CONFIG_UPDATED",
+      affectedRecordId: gymId,
+      details: { message: `Updated gym profile details for ${validated.data.name}` },
     })
 
     revalidatePath("/owner/gym-config")
@@ -95,14 +94,12 @@ export async function createMembershipPlan(formData: FormData) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "CREATE_MEMBERSHIP_PLAN",
-        resource: "MembershipPlan",
-        details: `Created plan ${plan.name} ($${plan.price}/${plan.durationDays} days)`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "GYM_CONFIG_UPDATED",
+      affectedRecordId: plan.id,
+      details: { message: `Created plan ${plan.name} ($${plan.price}/${plan.durationDays} days)` },
     })
 
     revalidatePath("/owner/gym-config")
@@ -140,14 +137,12 @@ export async function updateTrainerPayRates(formData: FormData) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "UPDATE_PAY_RATES",
-        resource: "Gym",
-        details: `Updated trainer pay rates: L1=${level1BaseRate*100}%, L2=${level2BaseRate*100}%, Off-shift=${offShiftPremium*100}%`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "PAY_RATES_UPDATED",
+      affectedRecordId: gymId,
+      details: { message: `Updated trainer pay rates: L1=${level1BaseRate*100}%, L2=${level2BaseRate*100}%, Off-shift=${offShiftPremium*100}%` },
     })
 
     revalidatePath("/owner/gym-config")
@@ -182,14 +177,12 @@ export async function updateCancellationPolicy(formData: FormData) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "UPDATE_CANCELLATION_POLICY",
-        resource: "Gym",
-        details: `Updated cancellation policy: window=${cancellationWindowHours}h, minDuration=${minSessionDuration}m`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "POLICY_UPDATED",
+      affectedRecordId: gymId,
+      details: { message: `Updated cancellation policy: window=${cancellationWindowHours}h, minDuration=${minSessionDuration}m` },
     })
 
     revalidatePath("/owner/gym-config")

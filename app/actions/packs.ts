@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -49,14 +50,12 @@ export async function issueSessionPack(formData: FormData) {
     })
 
     // BR-064: Deferred revenue tracking log in AuditLog
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "ISSUE_SESSION_PACK",
-        resource: "SessionPack",
-        details: `Issued ${totalSessions} PT Session Pack for $${price.toFixed(2)} to member ${userId}. Expiry: ${expiryDate.toISOString().split("T")[0]}`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "MEMBER_UPDATED",
+      affectedRecordId: pack.id,
+      details: { message: `Issued ${totalSessions} PT Session Pack for $${price.toFixed(2)} to member ${userId}. Expiry: ${expiryDate.toISOString().split("T")[0]}` },
     })
 
     revalidatePath(`/owner/members/${userId}`)

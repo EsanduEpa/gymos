@@ -106,6 +106,7 @@ model Gym {
   auditLogs               AuditLog[]
   budgets                 CategoryBudget[]
   payPeriods              PayPeriod[]
+  subscription            GymSubscription?
 }
 
 model User {
@@ -151,8 +152,8 @@ model User {
   hireRequestsClient  HireRequest[] @relation("HireClient")
   hireRequestsTrainer HireRequest[] @relation("HireTrainer")
   payRecords          PayRecord[]
-  messagesSent        Message[] @relation("MessageSender")
-  messagesReceived    Message[] @relation("MessageReceiver")
+  messagesSent        Message[] @relation("SentMessages")
+  messagesReceived    Message[] @relation("ReceivedMessages")
   notifications       Notification[]
   auditLogs           AuditLog[]
 }
@@ -375,35 +376,105 @@ model CategoryBudget {
   @@unique([gymId, category, month])
 }
 
-model Message {
-  id         String   @id @default(cuid())
-  senderId   String
-  sender     User     @relation("MessageSender", fields: [senderId], references: [id])
-  receiverId String
-  receiver   User     @relation("MessageReceiver", fields: [receiverId], references: [id])
-  content    String
-  read       Boolean  @default(false)
-  createdAt  DateTime @default(now())
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  type      String
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+enum AuditActionType {
+  MEMBER_CREATED
+  MEMBER_UPDATED
+  MEMBER_SUSPENDED
+  MEMBER_DEACTIVATED
+  TRAINER_CREATED
+  TRAINER_UPDATED
+  TRAINER_DEACTIVATED
+  SESSION_CREATED
+  SESSION_OVERRIDDEN
+  SESSION_CANCELLED
+  PLAN_ASSIGNED
+  PLAN_UPDATED
+  EXPENSE_CREATED
+  BUDGET_SET
+  PAY_PERIOD_CLOSED
+  PAY_PERIOD_APPROVED
+  GYM_CONFIG_UPDATED
+  PAY_RATES_UPDATED
+  POLICY_UPDATED
+  HIRE_REQUEST_ACCEPTED
+  HIRE_REQUEST_DECLINED
+  ACCESS_OVERRIDE
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  gymId     String?
-  gym       Gym?     @relation(fields: [gymId], references: [id])
-  actorId   String
-  actor     User     @relation(fields: [actorId], references: [id])
-  action    String
-  resource  String
-  details   String?
-  createdAt DateTime @default(now())
+  id               String          @id @default(uuid())
+  gymId            String
+  userId           String          // User who performed the action
+  actionType       AuditActionType
+  affectedRecordId String          // ID of the member, session, etc.
+  details          String?         // JSON stringified additional info
+  createdAt        DateTime        @default(now())
+
+  gym              Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum SubscriptionTier {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  GRACE_PERIOD
+  SUSPENDED
+}
+
+model GymSubscription {
+  id                   String             @id @default(uuid())
+  gymId                String             @unique
+  tier                 SubscriptionTier   @default(STARTER)
+  status               SubscriptionStatus @default(TRIAL)
+  billingCycle         String             @default("MONTHLY") // "MONTHLY" or "ANNUAL"
+  nextBillingDate      DateTime
+  paymentMethodLast4   String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  gym                  Gym                @relation(fields: [gymId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  senderId    String
+  receiverId  String
+  content     String
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+enum NotificationType {
+  HIRE_REQUEST
+  SESSION_BOOKED
+  SESSION_CANCELLED
+  PACK_LOW
+  MEMBERSHIP_EXPIRING
+  BUDGET_EXCEEDED
+  PAYROLL_READY
+  MESSAGE_RECEIVED
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String
+  type        NotificationType
+  title       String
+  message     String
+  linkUrl     String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  recipient   User             @relation(fields: [recipientId], references: [id], onDelete: Cascade)
 }

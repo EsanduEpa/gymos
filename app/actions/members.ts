@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { MemberStatus, Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
@@ -95,14 +96,12 @@ export async function createMember(formData: FormData) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "CREATE_MEMBER",
-        resource: "User",
-        details: `Registered new member ${fullName} (${email}) under plan ${plan.name}`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "MEMBER_CREATED",
+      affectedRecordId: user.id,
+      details: { message: `Registered new member ${fullName} (${email}) under plan ${plan.name}` },
     })
 
     revalidatePath("/owner/members")
@@ -131,15 +130,16 @@ export async function updateMemberStatus(memberId: string, status: MemberStatus)
       data: { status },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: session.user.gymId,
-        actorId: session.user.id,
-        action: `MEMBER_STATUS_${status}`,
-        resource: "User",
-        details: `Changed member ${user.fullName} (${user.email}) status to ${status}`,
-      },
-    })
+    const userGymId = session.user.gymId || ""
+    if (userGymId) {
+      await logAudit({
+        userId: session.user.id,
+        gymId: userGymId,
+        actionType: status === "SUSPENDED" ? "MEMBER_SUSPENDED" : "MEMBER_UPDATED",
+        affectedRecordId: memberId,
+        details: { message: `Changed member ${user.fullName} (${user.email}) status to ${status}` },
+      })
+    }
 
     revalidatePath(`/owner/members/${memberId}`)
     revalidatePath("/owner/members")
@@ -182,14 +182,12 @@ export async function checkMembershipExpiries() {
       data: { memberStatus: MemberStatus.EXPIRED },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "AUTO_EXPIRE_MEMBERSHIP",
-        resource: "Membership",
-        details: `Membership expired for ${m.user.fullName} (${m.user.email})`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "MEMBER_UPDATED",
+      affectedRecordId: m.userId,
+      details: { message: `Membership expired for ${m.user.fullName} (${m.user.email})` },
     })
     count++
   }

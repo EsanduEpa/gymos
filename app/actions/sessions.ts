@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { SessionStatus, SessionType, ShiftStatus, RevenueCategory } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -96,14 +97,12 @@ export async function bookSession(formData: FormData) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "BOOK_PT_SESSION",
-        resource: "PTSession",
-        details: `Booked ${type} session on ${date} at ${time}`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "SESSION_CREATED",
+      affectedRecordId: ptSession.id,
+      details: { message: `Booked ${type} session on ${date} at ${time}` },
     })
 
     revalidatePath("/owner/sessions")
@@ -241,14 +240,12 @@ export async function endSession(sessionId: string) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: ptSession.gymId,
-        actorId: session.user.id,
-        action: "COMPLETE_PT_SESSION",
-        resource: "PTSession",
-        details: `Completed PT Session ${sessionId}, deducted 1 pack session, paid trainer $${trainerPayAmount.toFixed(2)}`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId: ptSession.gymId,
+      actionType: "SESSION_OVERRIDDEN",
+      affectedRecordId: sessionId,
+      details: { message: `Completed PT Session ${sessionId}, deducted 1 pack session, paid trainer $${trainerPayAmount.toFixed(2)}` },
     })
 
     revalidatePath("/owner/sessions")
@@ -297,14 +294,12 @@ export async function handleNoShow(sessionId: string) {
       })
     }
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: ptSession.gymId,
-        actorId: session.user.id,
-        action: "NO_SHOW_SESSION",
-        resource: "PTSession",
-        details: `Marked session ${sessionId} as MISSED (No-Show). Deducted 1 pack session with $0 trainer pay.`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId: ptSession.gymId,
+      actionType: "SESSION_CANCELLED",
+      affectedRecordId: sessionId,
+      details: { message: `Marked session ${sessionId} as MISSED (No-Show). Deducted 1 pack session with $0 trainer pay.` },
     })
 
     revalidatePath("/owner/sessions")
@@ -361,14 +356,12 @@ export async function cancelSession(sessionId: string, reason?: string) {
       }
     }
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: ptSession.gymId,
-        actorId: session.user.id,
-        action: "CANCEL_PT_SESSION",
-        resource: "PTSession",
-        details: `Cancelled session ${sessionId} (${isLateCancel ? "Late Cancellation - Deducted Pack" : "On-Time Cancellation"})`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId: ptSession.gymId,
+      actionType: "SESSION_CANCELLED",
+      affectedRecordId: sessionId,
+      details: { message: `Cancelled session ${sessionId} (${isLateCancel ? "Late Cancellation - Deducted Pack" : "On-Time Cancellation"})` },
     })
 
     revalidatePath("/owner/sessions")

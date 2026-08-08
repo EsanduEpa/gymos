@@ -1,6 +1,7 @@
 "use client"
 
-import { Search, Bell, User as UserIcon } from "lucide-react"
+import { Search } from "lucide-react"
+import NotificationBell from "./NotificationBell"
 
 interface HeaderProps {
   fullName: string
@@ -22,11 +23,8 @@ export function Header({ fullName, role }: HeaderProps) {
 
       {/* Actions / Profile */}
       <div className="flex items-center gap-4">
-        {/* Notifications Button */}
-        <button className="relative p-2 rounded-full text-[#4A4D58] hover:bg-[#F5F4F5] transition-colors cursor-pointer">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#007A35]"></span>
-        </button>
+        {/* Notifications Component */}
+        <NotificationBell />
 
         {/* User Info */}
         <div className="flex items-center gap-2.5 pl-2 border-l border-[#E1E1E4]">

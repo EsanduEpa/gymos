@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { Role, TrainerLevel } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
@@ -73,14 +74,12 @@ export async function createTrainer(formData: FormData) {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId,
-        actorId: session.user.id,
-        action: "CREATE_TRAINER",
-        resource: "User",
-        details: `Created trainer account ${trainer.fullName} (${trainer.email}) as ${trainer.trainerLevel}`,
-      },
+    await logAudit({
+      userId: session.user.id,
+      gymId,
+      actionType: "TRAINER_CREATED",
+      affectedRecordId: trainer.id,
+      details: { message: `Created trainer account ${trainer.fullName} (${trainer.email}) as ${trainer.trainerLevel}` },
     })
 
     revalidatePath("/owner/trainers")
@@ -103,15 +102,16 @@ export async function updateTrainerStatus(trainerId: string, status: "ACTIVE" | 
       data: { trainerStatus: status },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: session.user.gymId,
-        actorId: session.user.id,
-        action: `TRAINER_STATUS_${status}`,
-        resource: "User",
-        details: `Changed status for trainer ${trainer.fullName} to ${status}`,
-      },
-    })
+    const gymId = session.user.gymId || ""
+    if (gymId) {
+      await logAudit({
+        userId: session.user.id,
+        gymId,
+        actionType: status === "DEACTIVATED" ? "TRAINER_DEACTIVATED" : "TRAINER_UPDATED",
+        affectedRecordId: trainerId,
+        details: { message: `Changed status for trainer ${trainer.fullName} to ${status}` },
+      })
+    }
 
     revalidatePath(`/owner/trainers/${trainerId}`)
     revalidatePath("/owner/trainers")
@@ -133,15 +133,16 @@ export async function approveShiftHours(trainerId: string, shiftStart: string, s
       data: { shiftStart, shiftEnd },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: session.user.gymId,
-        actorId: session.user.id,
-        action: "APPROVE_TRAINER_SHIFT",
-        resource: "User",
-        details: `Approved shift hours for trainer ${trainer.fullName}: ${shiftStart} - ${shiftEnd}`,
-      },
-    })
+    const gymId = session.user.gymId || ""
+    if (gymId) {
+      await logAudit({
+        userId: session.user.id,
+        gymId,
+        actionType: "TRAINER_UPDATED",
+        affectedRecordId: trainerId,
+        details: { message: `Approved shift hours for trainer ${trainer.fullName}: ${shiftStart} - ${shiftEnd}` },
+      })
+    }
 
     revalidatePath(`/owner/trainers/${trainerId}`)
     revalidatePath("/owner/trainers")

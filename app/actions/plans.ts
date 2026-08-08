@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
 
 export async function saveWorkoutPlan(data: {
@@ -42,15 +43,16 @@ export async function saveWorkoutPlan(data: {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: session.user.gymId,
-        actorId: session.user.id,
-        action: "CREATE_WORKOUT_PLAN",
-        resource: "WorkoutPlan",
-        details: `Created Workout Plan "${data.name}" for client ${data.clientId}`,
-      },
-    })
+    const gymId = session.user.gymId || ""
+    if (gymId) {
+      await logAudit({
+        userId: session.user.id,
+        gymId,
+        actionType: "PLAN_ASSIGNED",
+        affectedRecordId: workoutPlan.id,
+        details: { message: `Created Workout Plan "${data.name}" for client ${data.clientId}` },
+      })
+    }
 
     revalidatePath(`/trainer/clients/${data.clientId}`)
     return { success: true, planId: workoutPlan.id }
@@ -98,15 +100,16 @@ export async function saveMealPlan(data: {
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        gymId: session.user.gymId,
-        actorId: session.user.id,
-        action: "CREATE_MEAL_PLAN",
-        resource: "MealPlan",
-        details: `Created Meal Plan "${data.name}" for client ${data.clientId}`,
-      },
-    })
+    const gymId = session.user.gymId || ""
+    if (gymId) {
+      await logAudit({
+        userId: session.user.id,
+        gymId,
+        actionType: "PLAN_ASSIGNED",
+        affectedRecordId: mealPlan.id,
+        details: { message: `Created Meal Plan "${data.name}" for client ${data.clientId}` },
+      })
+    }
 
     revalidatePath(`/trainer/clients/${data.clientId}`)
     return { success: true, planId: mealPlan.id }
