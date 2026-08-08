@@ -4,7 +4,24 @@ import { getToken } from "next-auth/jwt"
 
 export async function middleware(req: NextRequest) {
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "gymos_secret_key_production_level_auth_2026_super_secure"
-  const token = await getToken({ req, secret })
+  const isProduction = process.env.NODE_ENV === "production"
+  
+  let token = await getToken({ 
+    req, 
+    secret,
+    secureCookie: isProduction,
+    salt: isProduction ? "__Secure-authjs.session-token" : "authjs.session-token"
+  })
+
+  // Fallback for NextAuth older beta versions
+  if (!token) {
+    token = await getToken({ 
+      req, 
+      secret,
+      secureCookie: isProduction,
+      salt: isProduction ? "__Secure-next-auth.session-token" : "next-auth.session-token"
+    })
+  }
   const { pathname } = req.nextUrl
 
   const isAuthPage = pathname.startsWith("/login")
