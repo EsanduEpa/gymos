@@ -38,11 +38,11 @@ function LoginForm() {
         return
       }
 
+      // Force a hard navigation to guarantee server components run cleanly on Vercel
       if (callbackUrl) {
-        router.push(callbackUrl)
+        window.location.href = callbackUrl
       } else {
-        router.refresh()
-        router.push("/owner")
+        window.location.href = "/owner"
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.")
