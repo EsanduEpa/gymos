@@ -63,8 +63,8 @@ export async function createTrainer(formData: FormData) {
         gymId,
         trainerLevel: validated.data.trainerLevel as TrainerLevel,
         specialisations: validated.data.specialisations
-          ? JSON.stringify(validated.data.specialisations.split(",").map((s) => s.trim()))
-          : JSON.stringify([]),
+          ? validated.data.specialisations.split(",").map((s) => s.trim())
+          : [],
         yearsExperience: validated.data.yearsExperience,
         shiftStart: validated.data.shiftStart || "08:00",
         shiftEnd: validated.data.shiftEnd || "17:00",

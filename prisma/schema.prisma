@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -86,7 +86,7 @@ model Gym {
   logo                    String?
   phone                   String?
   email                   String?
-  operatingHours          String?  // JSON string
+  operatingHours          Json?    // { mon: {open, close}, tue: ... }
   cancellationWindowHours Int      @default(24)
   noShowDeduction         Boolean  @default(true)
   lateCancelDeduction     Boolean  @default(true)
@@ -127,7 +127,7 @@ model User {
 
   // Trainer-specific
   trainerLevel     TrainerLevel?
-  specialisations  String?  // JSON array string
+  specialisations  String[]  // array of strings
   yearsExperience  Int?
   shiftStart       String?   // "09:00"
   shiftEnd         String?   // "17:00"

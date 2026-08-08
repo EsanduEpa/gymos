@@ -48,9 +48,11 @@ export function TrainersListClient({ trainers }: TrainersListClientProps) {
       header: "Specialisations",
       accessor: (row) => {
         let specs: string[] = []
-        try {
-          specs = typeof row.specialisations === "string" ? JSON.parse(row.specialisations) : row.specialisations || []
-        } catch (e) {}
+        if (Array.isArray(row.specialisations)) {
+          specs = row.specialisations
+        } else if (typeof row.specialisations === "string") {
+          try { specs = JSON.parse(row.specialisations) } catch (e) {}
+        }
 
         return (
           <div className="flex flex-wrap gap-1">

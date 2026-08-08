@@ -43,9 +43,11 @@ export function TrainerProfileClient({ trainer }: TrainerProfileClientProps) {
   }
 
   let specs: string[] = []
-  try {
-    specs = typeof trainer.specialisations === "string" ? JSON.parse(trainer.specialisations) : trainer.specialisations || []
-  } catch (e) {}
+  if (Array.isArray(trainer.specialisations)) {
+    specs = trainer.specialisations
+  } else if (typeof trainer.specialisations === "string") {
+    try { specs = JSON.parse(trainer.specialisations) } catch (e) {}
+  }
 
   return (
     <div className="space-y-6">
