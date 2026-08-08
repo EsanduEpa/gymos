@@ -357,6 +357,7 @@ model ExpenseRecord {
   category    ExpenseCategory
   date        DateTime @default(now())
   description String?
+  isRecurring Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -370,6 +371,8 @@ model CategoryBudget {
   month     DateTime // represents the month/year
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([gymId, category, month])
 }
 
 model Message {

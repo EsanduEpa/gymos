@@ -6,6 +6,21 @@ const prisma = new PrismaClient()
 async function main() {
   console.log("Seeding database...")
 
+  // Clean existing seed data for idempotency
+  await prisma.auditLog.deleteMany()
+  await prisma.payRecord.deleteMany()
+  await prisma.payPeriod.deleteMany()
+  await prisma.categoryBudget.deleteMany()
+  await prisma.expenseRecord.deleteMany()
+  await prisma.revenueRecord.deleteMany()
+  await prisma.pTSession.deleteMany()
+  await prisma.hireRequest.deleteMany()
+  await prisma.sessionPack.deleteMany()
+  await prisma.membership.deleteMany()
+  await prisma.membershipPlan.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.gym.deleteMany()
+
   const passwordHash = await bcrypt.hash("password123", 10)
 
   // 1. Create SuperAdmin
@@ -215,37 +230,164 @@ async function main() {
     },
   })
 
-  // 9. Create Sample PT Sessions
-  await prisma.pTSession.create({
+  // 10. Financial Records (Revenue, Expenses, Category Budgets, Pay Period)
+  const now = new Date()
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  // Revenue Records
+  await prisma.revenueRecord.createMany({
+    data: [
+      {
+        gymId: gym.id,
+        amount: 499.99,
+        category: "MEMBERSHIP",
+        date: new Date(now.getTime() - 15 * 86400000),
+        description: "Annual Premium Membership - John Doe",
+      },
+      {
+        gymId: gym.id,
+        amount: 499.99,
+        category: "MEMBERSHIP",
+        date: new Date(now.getTime() - 10 * 86400000),
+        description: "Annual Premium Membership - Jane Smith",
+      },
+      {
+        gymId: gym.id,
+        amount: 450.0,
+        category: "PT_SESSION",
+        date: new Date(now.getTime() - 8 * 86400000),
+        description: "10 PT Session Pack - John Doe",
+      },
+      {
+        gymId: gym.id,
+        amount: 250.0,
+        category: "PT_SESSION",
+        date: new Date(now.getTime() - 5 * 86400000),
+        description: "5 PT Session Pack - Jane Smith",
+      },
+      {
+        gymId: gym.id,
+        amount: 35.0,
+        category: "ADD_ON",
+        date: new Date(now.getTime() - 2 * 86400000),
+        description: "Whey Protein & Gym Towel - Member Retail",
+      },
+      {
+        gymId: gym.id,
+        amount: 60.0,
+        category: "ADD_ON",
+        date: new Date(now.getTime() - 1 * 86400000),
+        description: "BCAA Powder & FitCore Shaker Bottle",
+      },
+    ],
+  })
+
+  // Expense Records
+  await prisma.expenseRecord.createMany({
+    data: [
+      {
+        gymId: gym.id,
+        amount: 2500.0,
+        category: "RENT",
+        date: new Date(now.getFullYear(), now.getMonth(), 1),
+        description: "Monthly Facility Lease - Colombo 03",
+        isRecurring: true,
+      },
+      {
+        gymId: gym.id,
+        amount: 480.0,
+        category: "UTILITIES",
+        date: new Date(now.getFullYear(), now.getMonth(), 5),
+        description: "Electricity & Water Bill",
+        isRecurring: true,
+      },
+      {
+        gymId: gym.id,
+        amount: 650.0,
+        category: "MARKETING",
+        date: new Date(now.getFullYear(), now.getMonth(), 8),
+        description: "Social Media Ads & Local Gym Promotion",
+        isRecurring: false,
+      },
+      {
+        gymId: gym.id,
+        amount: 320.0,
+        category: "MAINTENANCE",
+        date: new Date(now.getFullYear(), now.getMonth(), 10),
+        description: "Treadmill Belt Servicing & Cable Machine Lubrication",
+        isRecurring: false,
+      },
+      {
+        gymId: gym.id,
+        amount: 1500.0,
+        category: "EQUIPMENT",
+        date: new Date(now.getFullYear(), now.getMonth(), 12),
+        description: "New Dumbbell Rack & Rubber Plates",
+        isRecurring: false,
+      },
+    ],
+  })
+
+  // Category Budgets
+  const categories = ["RENT", "UTILITIES", "EQUIPMENT", "MARKETING", "SALARIES", "MAINTENANCE", "OTHER"] as const
+  const budgetAmounts: Record<typeof categories[number], number> = {
+    RENT: 2500.0,
+    UTILITIES: 500.0,
+    EQUIPMENT: 1000.0,
+    MARKETING: 500.0, // Spent 650 -> Over budget!
+    SALARIES: 4000.0,
+    MAINTENANCE: 400.0,
+    OTHER: 300.0,
+  }
+
+  for (const cat of categories) {
+    await prisma.categoryBudget.upsert({
+      where: {
+        gymId_category_month: {
+          gymId: gym.id,
+          category: cat,
+          month: currentMonthStart,
+        },
+      },
+      update: { amount: budgetAmounts[cat] },
+      create: {
+        gymId: gym.id,
+        category: cat,
+        amount: budgetAmounts[cat],
+        month: currentMonthStart,
+      },
+    })
+  }
+
+  // Pay Period
+  const payPeriod = await prisma.payPeriod.create({
     data: {
       gymId: gym.id,
+      startDate: new Date(now.getFullYear(), now.getMonth(), 1),
+      endDate: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+      status: "OPEN",
+    },
+  })
+
+  await prisma.payRecord.create({
+    data: {
       trainerId: trainer1.id,
-      clientId: createdMembers[0].id,
-      scheduledAt: new Date(Date.now() + 2 * 3600000), // Today in 2 hrs
-      duration: 60,
-      type: SessionType.IN_PERSON,
-      status: SessionStatus.SCHEDULED,
-      shiftStatus: ShiftStatus.IN_SHIFT,
-      fee: 50.0,
+      payPeriodId: payPeriod.id,
+      amount: 20.0,
+      description: "PT Session completion pay (40% Level 1 base rate)",
     },
   })
 
-  await prisma.pTSession.create({
+  await prisma.payRecord.create({
     data: {
-      gymId: gym.id,
       trainerId: trainer2.id,
-      clientId: createdMembers[1].id,
-      scheduledAt: new Date(Date.now() - 24 * 3600000), // Yesterday
-      duration: 60,
-      type: SessionType.IN_PERSON,
-      status: SessionStatus.COMPLETED,
-      shiftStatus: ShiftStatus.IN_SHIFT,
-      fee: 50.0,
-      notes: "Completed 4 sets of squat and deadlift.",
+      payPeriodId: payPeriod.id,
+      amount: 25.0,
+      description: "PT Session completion pay (50% Level 2 base rate)",
     },
   })
 
-  console.log("Database successfully seeded with Part 3 PT Sessions, Session Packs, and Hire Requests!")
+  console.log("Database successfully seeded with Part 4 Financials, Expenses, Budgets, and Payroll!")
 }
 
 main()

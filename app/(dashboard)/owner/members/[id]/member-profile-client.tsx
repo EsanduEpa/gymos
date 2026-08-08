@@ -8,6 +8,8 @@ import { updateMemberStatus } from "@/app/actions/members"
 import { issueSessionPack } from "@/app/actions/packs"
 import { ArrowLeft, Calendar, User, ShieldAlert, CheckCircle, Clock, Plus, Dumbbell } from "lucide-react"
 
+import { RecordDeskPaymentDialog } from "../../financials/components/financial-modals"
+
 interface MemberProfileClientProps {
   member: any
 }
@@ -16,6 +18,7 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "attendance" | "payments" | "progress">("overview")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [packModalOpen, setPackModalOpen] = useState(false)
+  const [deskPaymentModalOpen, setDeskPaymentModalOpen] = useState(false)
   const [targetStatus, setTargetStatus] = useState<"SUSPENDED" | "INACTIVE" | "ACTIVE">("SUSPENDED")
   const [loading, setLoading] = useState(false)
   const [packMsg, setPackMsg] = useState<string | null>(null)
@@ -237,11 +240,94 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
 
       {/* Tab 3: Payments */}
       {activeTab === "payments" && (
-        <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm">
-          <h2 className="text-xs font-bold uppercase text-[#8B8E98] mb-4">Billing Transactions</h2>
-          <p className="text-xs text-[#8B8E98]">
-            Membership purchase on {new Date(member.createdAt).toLocaleDateString()} — ${activeMembership?.plan?.price?.toFixed(2) || "0.00"}
-          </p>
+        <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b pb-3">
+            <div>
+              <h2 className="text-xs font-bold uppercase text-[#8B8E98]">Billing Transactions & Receipts</h2>
+              <p className="text-xs text-[#4A4D58]">Payment history for memberships and PT packs</p>
+            </div>
+            <button
+              onClick={() => setDeskPaymentModalOpen(true)}
+              className="bg-[#007A35] hover:bg-[#005c28] text-white text-xs font-medium px-3 py-1.5 rounded-lg transition"
+            >
+              Record Desk Payment
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50 text-[#8B8E98] uppercase">
+                <tr>
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Item / Description</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 text-right">Amount</th>
+                  <th className="p-3 text-center">Receipt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {activeMembership && (
+                  <tr className="hover:bg-gray-50">
+                    <td className="p-3 text-[#4A4D58]">
+                      {new Date(activeMembership.startDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-3 font-semibold text-[#171B28]">
+                      Membership: {activeMembership.plan.name}
+                    </td>
+                    <td className="p-3">
+                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                        PAID
+                      </span>
+                    </td>
+                    <td className="p-3 text-right font-bold text-[#171B28]">
+                      ${activeMembership.plan.price.toFixed(2)}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => alert(`Receipt #${activeMembership.id.slice(-6)}: Paid $${activeMembership.plan.price.toFixed(2)} via GymOS Desk Billing`)}
+                        className="text-[#007A35] hover:underline text-[11px] font-medium"
+                      >
+                        Download Receipt
+                      </button>
+                    </td>
+                  </tr>
+                )}
+
+                {member.sessionPacks.map((p: any) => (
+                  <tr key={p.id} className="hover:bg-gray-50">
+                    <td className="p-3 text-[#4A4D58]">
+                      {new Date(p.purchaseDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-3 font-semibold text-[#171B28]">
+                      PT Pack: {p.totalSessions} Sessions ({p.status})
+                    </td>
+                    <td className="p-3">
+                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
+                        PAID
+                      </span>
+                    </td>
+                    <td className="p-3 text-right font-bold text-[#171B28]">
+                      ${(p.price || 0).toFixed(2)}
+                    </td>
+                    <td className="p-3 text-center">
+                      <button
+                        onClick={() => alert(`Receipt #${p.id.slice(-6)}: Paid $${(p.price || 0).toFixed(2)} for ${p.totalSessions} PT Sessions`)}
+                        className="text-[#007A35] hover:underline text-[11px] font-medium"
+                      >
+                        Download Receipt
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <RecordDeskPaymentDialog
+            isOpen={deskPaymentModalOpen}
+            onClose={() => setDeskPaymentModalOpen(false)}
+            members={[{ id: member.id, fullName: member.fullName }]}
+          />
         </div>
       )}
 
