@@ -1,24 +1,19 @@
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { authorize, trainerClientWhere } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { TrainerClientsClient } from "./clients-client"
 
 export default async function TrainerClientsPage() {
-  const session = await auth()
-  const trainerId = session?.user?.id
+  const authorized = await authorize([Role.PERSONAL_TRAINER])
+  if (!authorized.ok) return <div className="p-6">{authorized.error}</div>
 
-  if (!trainerId) return <div className="p-6">Unauthorized</div>
+  const trainerId = authorized.userId
 
-  // A client becomes "assigned" to this trainer once they have at least one
-  // confirmed or completed session together (the booking flow is the hire
-  // mechanism now — there is no separate HireRequest step).
-  const clientSessions = await prisma.pTSession.findMany({
-    where: { trainerId, status: { in: ["SCHEDULED", "ACTIVE", "COMPLETED"] } },
-    distinct: ["clientId"],
-    select: { clientId: true },
-  })
-
+  // Shares one definition of "this trainer's client" with the profile page and
+  // the plan builder, so the roster can never list someone those screens would
+  // refuse to open.
   const clients = await prisma.user.findMany({
-    where: { id: { in: clientSessions.map((s) => s.clientId) } },
+    where: trainerClientWhere(authorized.gymId, trainerId),
     include: {
       sessionPacks: {
         where: { status: "ACTIVE" },

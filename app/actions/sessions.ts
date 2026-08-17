@@ -4,7 +4,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { createNotification } from "@/lib/notifications"
-import { SessionStatus, SessionType, ShiftStatus } from "@prisma/client"
+import { authorize } from "@/lib/authz"
+import { Role, SessionStatus, SessionType, ShiftStatus } from "@prisma/client"
 import { Prisma } from "@prisma/client"
 import { RevenueCategory } from "@prisma/client"
 import { revalidatePath } from "next/cache"
@@ -109,14 +110,9 @@ const bookSessionSchema = z.object({
 // Staff-assisted booking (walk-ins/phone bookings). Owner-only, skips the
 // confirmation dance and goes straight to SCHEDULED.
 export async function bookSession(formData: FormData) {
-  const session = await auth()
-  if (!session || !session.user) return { error: "Unauthorized" }
-  if (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN") {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym assigned" }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     clientId: formData.get("clientId") as string,
@@ -178,7 +174,7 @@ export async function bookSession(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "SESSION_CREATED",
       affectedRecordId: ptSession.id,
@@ -206,13 +202,9 @@ const requestSessionSchema = z.object({
 // trainer must accept before it counts as booked. This IS the hire
 // mechanism now — no separate step establishes the trainer-client link.
 export async function requestSession(formData: FormData) {
-  const session = await auth()
-  if (!session || !session.user || session.user.role !== "GYM_MEMBER") {
-    return { error: "Only gym members can request PT sessions" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym assigned" }
+  const auth = await authorize([Role.GYM_MEMBER])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     trainerId: formData.get("trainerId") as string,
@@ -230,7 +222,7 @@ export async function requestSession(formData: FormData) {
 
   const { trainerId, date, time, type, duration, notes } = validated.data
   // Never trust a client-supplied id for who the request is from.
-  const clientId = session.user.id
+  const clientId = auth.userId
   const scheduledAt = new Date(`${date}T${time}:00`)
 
   if (scheduledAt.getTime() < Date.now()) {
@@ -283,7 +275,7 @@ export async function requestSession(formData: FormData) {
       recipientId: trainerId,
       type: "HIRE_REQUEST",
       title: "New Session Request",
-      message: `${session.user.fullName} requested a ${type.toLowerCase().replace("_", " ")} session on ${date} at ${time}`,
+      message: `${auth.fullName} requested a ${type.toLowerCase().replace("_", " ")} session on ${date} at ${time}`,
       linkUrl: "/trainer/schedule",
     })
 
@@ -292,7 +284,7 @@ export async function requestSession(formData: FormData) {
       gymId,
       actionType: "SESSION_CREATED",
       affectedRecordId: ptSession.id,
-      details: { message: `${session.user.fullName} requested a session with trainer ${trainer.fullName} on ${date} at ${time}` },
+      details: { message: `${auth.fullName} requested a session with trainer ${trainer.fullName} on ${date} at ${time}` },
     })
 
     revalidateSessionPaths()

@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { authorize, trainerClientWhere } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { Client360Client } from "./client-360-client"
 
 export default async function TrainerClient360Page({
@@ -8,13 +9,19 @@ export default async function TrainerClient360Page({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const session = await auth()
-  const trainerId = session?.user?.id
+  const authorized = await authorize([Role.PERSONAL_TRAINER])
+  if (!authorized.ok) return <div className="p-6">{authorized.error}</div>
 
-  if (!trainerId) return <div className="p-6">Unauthorized</div>
+  const trainerId = authorized.userId
 
+  // Scoped to this trainer's own clients within their own gym. Without the
+  // relationship filter, changing the id in the URL would expose any member's
+  // health notes, emergency contact and date of birth.
   const client = await prisma.user.findFirst({
-    where: { id },
+    where: {
+      id,
+      ...trainerClientWhere(authorized.gymId, trainerId),
+    },
     include: {
       sessionPacks: {
         where: { status: "ACTIVE" },

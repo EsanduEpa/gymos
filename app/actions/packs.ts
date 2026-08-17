@@ -1,8 +1,9 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { authorize, findUserInGym } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -14,13 +15,9 @@ const issuePackSchema = z.object({
 })
 
 export async function issueSessionPack(formData: FormData) {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym assigned" }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     userId: formData.get("userId") as string,
@@ -37,10 +34,15 @@ export async function issueSessionPack(formData: FormData) {
   const { userId, totalSessions, price, durationDays } = validated.data
   const expiryDate = new Date(Date.now() + durationDays * 86400000)
 
+  // SessionPack carries no gymId of its own, so the member is the only thing
+  // tying a pack to a tenant — check them before issuing anything.
+  const member = await findUserInGym(gymId, userId, Role.GYM_MEMBER)
+  if (!member) return { error: "Member not found at your gym." }
+
   try {
     const pack = await prisma.sessionPack.create({
       data: {
-        userId,
+        userId: member.id,
         totalSessions,
         remainingSessions: totalSessions,
         price,
@@ -51,11 +53,11 @@ export async function issueSessionPack(formData: FormData) {
 
     // BR-064: Deferred revenue tracking log in AuditLog
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "MEMBER_UPDATED",
       affectedRecordId: pack.id,
-      details: { message: `Issued ${totalSessions} PT Session Pack for $${price.toFixed(2)} to member ${userId}. Expiry: ${expiryDate.toISOString().split("T")[0]}` },
+      details: { message: `Issued ${totalSessions} PT Session Pack for $${price.toFixed(2)} to ${member.fullName}. Expiry: ${expiryDate.toISOString().split("T")[0]}` },
     })
 
     revalidatePath(`/owner/members/${userId}`)

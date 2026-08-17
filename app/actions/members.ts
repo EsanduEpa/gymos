@@ -1,8 +1,8 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { authorize, findUserInGym } from "@/lib/authz"
 import { MemberStatus, Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
@@ -19,13 +19,9 @@ const createMemberSchema = z.object({
 })
 
 export async function createMember(formData: FormData) {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym assigned to user" }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     fullName: formData.get("fullName") as string,
@@ -51,9 +47,9 @@ export async function createMember(formData: FormData) {
     return { error: "A member with this email already exists." }
   }
 
-  // Get selected membership plan to calculate expiry
-  const plan = await prisma.membershipPlan.findUnique({
-    where: { id: membershipPlanId },
+  // Scoped to this gym — a plan id from another gym must not be attachable.
+  const plan = await prisma.membershipPlan.findFirst({
+    where: { id: membershipPlanId, gymId },
   })
   if (!plan) return { error: "Invalid membership plan selected." }
 
@@ -97,7 +93,7 @@ export async function createMember(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "MEMBER_CREATED",
       affectedRecordId: user.id,
@@ -113,50 +109,48 @@ export async function createMember(formData: FormData) {
 }
 
 export async function updateMemberStatus(memberId: string, status: MemberStatus) {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized access" }
-  }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
+
+  // Confirm the member is ours before touching them. Without this, an owner
+  // could suspend or reactivate a member belonging to any other gym.
+  const member = await findUserInGym(gymId, memberId, Role.GYM_MEMBER)
+  if (!member) return { error: "Member not found at your gym." }
 
   try {
     const user = await prisma.user.update({
-      where: { id: memberId },
+      where: { id: member.id },
       data: { memberStatus: status },
     })
 
     // Update active membership status as well
     await prisma.membership.updateMany({
-      where: { userId: memberId, status: { not: MemberStatus.EXPIRED } },
+      where: { userId: member.id, status: { not: MemberStatus.EXPIRED } },
       data: { status },
     })
 
-    const userGymId = session.user.gymId || ""
-    if (userGymId) {
-      await logAudit({
-        userId: session.user.id,
-        gymId: userGymId,
-        actionType: status === "SUSPENDED" ? "MEMBER_SUSPENDED" : "MEMBER_UPDATED",
-        affectedRecordId: memberId,
-        details: { message: `Changed member ${user.fullName} (${user.email}) status to ${status}` },
-      })
-    }
+    await logAudit({
+      userId: auth.userId,
+      gymId,
+      actionType: status === "SUSPENDED" ? "MEMBER_SUSPENDED" : "MEMBER_UPDATED",
+      affectedRecordId: member.id,
+      details: { message: `Changed member ${user.fullName} (${user.email}) status to ${status}` },
+    })
 
     revalidatePath(`/owner/members/${memberId}`)
     revalidatePath("/owner/members")
     return { success: true }
   } catch (err) {
+    console.error("Update member status error:", err)
     return { error: "Failed to update member status" }
   }
 }
 
 export async function checkMembershipExpiries() {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym associated" }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const now = new Date()
 
@@ -183,7 +177,7 @@ export async function checkMembershipExpiries() {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "MEMBER_UPDATED",
       affectedRecordId: m.userId,

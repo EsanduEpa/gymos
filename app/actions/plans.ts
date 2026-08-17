@@ -1,9 +1,24 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { authorize, trainerClientWhere } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
+
+// Plans are written with the caller as trainer-of-record, so only a trainer can
+// create one — an owner doing so would invent a trainer↔client relationship
+// that no session backs. The plan builder already lives under /trainer.
+const PLAN_AUTHORS = [Role.PERSONAL_TRAINER]
+
+/** Resolves a client the calling trainer is actually allowed to write plans for. */
+async function resolveClient(gymId: string, trainerId: string, clientId: string) {
+  if (!clientId) return null
+  return prisma.user.findFirst({
+    where: { id: clientId, ...trainerClientWhere(gymId, trainerId) },
+    select: { id: true, fullName: true },
+  })
+}
 
 export async function saveWorkoutPlan(data: {
   clientId: string
@@ -18,16 +33,17 @@ export async function saveWorkoutPlan(data: {
     notes?: string
   }[]
 }) {
-  const session = await auth()
-  if (!session || (session.user.role !== "PERSONAL_TRAINER" && session.user.role !== "GYM_OWNER")) {
-    return { error: "Unauthorized access" }
-  }
+  const auth = await authorize(PLAN_AUTHORS)
+  if (!auth.ok) return { error: auth.error }
+
+  const client = await resolveClient(auth.gymId, auth.userId, data.clientId)
+  if (!client) return { error: "That client is not assigned to you." }
 
   try {
     const workoutPlan = await prisma.workoutPlan.create({
       data: {
-        trainerId: session.user.id,
-        clientId: data.clientId,
+        trainerId: auth.userId,
+        clientId: client.id,
         name: data.name,
         description: data.description,
         exercises: {
@@ -43,16 +59,13 @@ export async function saveWorkoutPlan(data: {
       },
     })
 
-    const gymId = session.user.gymId || ""
-    if (gymId) {
-      await logAudit({
-        userId: session.user.id,
-        gymId,
-        actionType: "PLAN_ASSIGNED",
-        affectedRecordId: workoutPlan.id,
-        details: { message: `Created Workout Plan "${data.name}" for client ${data.clientId}` },
-      })
-    }
+    await logAudit({
+      userId: auth.userId,
+      gymId: auth.gymId,
+      actionType: "PLAN_ASSIGNED",
+      affectedRecordId: workoutPlan.id,
+      details: { message: `Created Workout Plan "${data.name}" for ${client.fullName}` },
+    })
 
     revalidatePath(`/trainer/clients/${data.clientId}`)
     return { success: true, planId: workoutPlan.id }
@@ -75,16 +88,17 @@ export async function saveMealPlan(data: {
     fats?: number
   }[]
 }) {
-  const session = await auth()
-  if (!session || (session.user.role !== "PERSONAL_TRAINER" && session.user.role !== "GYM_OWNER")) {
-    return { error: "Unauthorized access" }
-  }
+  const auth = await authorize(PLAN_AUTHORS)
+  if (!auth.ok) return { error: auth.error }
+
+  const client = await resolveClient(auth.gymId, auth.userId, data.clientId)
+  if (!client) return { error: "That client is not assigned to you." }
 
   try {
     const mealPlan = await prisma.mealPlan.create({
       data: {
-        trainerId: session.user.id,
-        clientId: data.clientId,
+        trainerId: auth.userId,
+        clientId: client.id,
         name: data.name,
         entries: {
           create: data.entries.map((e) => ({
@@ -100,16 +114,13 @@ export async function saveMealPlan(data: {
       },
     })
 
-    const gymId = session.user.gymId || ""
-    if (gymId) {
-      await logAudit({
-        userId: session.user.id,
-        gymId,
-        actionType: "PLAN_ASSIGNED",
-        affectedRecordId: mealPlan.id,
-        details: { message: `Created Meal Plan "${data.name}" for client ${data.clientId}` },
-      })
-    }
+    await logAudit({
+      userId: auth.userId,
+      gymId: auth.gymId,
+      actionType: "PLAN_ASSIGNED",
+      affectedRecordId: mealPlan.id,
+      details: { message: `Created Meal Plan "${data.name}" for ${client.fullName}` },
+    })
 
     revalidatePath(`/trainer/clients/${data.clientId}`)
     return { success: true, planId: mealPlan.id }

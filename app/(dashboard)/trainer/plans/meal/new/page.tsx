@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { authorize, trainerClientWhere } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { MealBuilderForm } from "./meal-builder-form"
 
 export default async function NewMealPlanPage({
@@ -8,20 +9,13 @@ export default async function NewMealPlanPage({
   searchParams: Promise<{ clientId?: string }>
 }) {
   const { clientId } = await searchParams
-  const session = await auth()
-  const trainerId = session?.user?.id
+  const authorized = await authorize([Role.PERSONAL_TRAINER])
+  if (!authorized.ok) return <div className="p-6">{authorized.error}</div>
 
-  if (!trainerId) return <div className="p-6">Unauthorized</div>
-
-  // Fetch trainer's assigned clients (confirmed/completed session together)
-  const clientSessions = await prisma.pTSession.findMany({
-    where: { trainerId, status: { in: ["SCHEDULED", "ACTIVE", "COMPLETED"] } },
-    distinct: ["clientId"],
-    select: { clientId: true },
-  })
-
+  // Same client rule the save action enforces, so the picker can never offer
+  // someone the save would then reject.
   const clients = await prisma.user.findMany({
-    where: { id: { in: clientSessions.map((s) => s.clientId) } },
+    where: trainerClientWhere(authorized.gymId, authorized.userId),
   })
 
   return (

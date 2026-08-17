@@ -1,16 +1,11 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { AuditActionType } from "@prisma/client"
+import { authorizeOrThrow } from "@/lib/authz"
+import { AuditActionType, Role } from "@prisma/client"
 
 export async function getAuditLogs(params?: { actionType?: string; page?: number }) {
-  const session = await auth()
-  const gymId = session?.user?.gymId
-
-  if (!gymId) {
-    throw new Error("Unauthorized or Gym ID missing")
-  }
+  const { gymId } = await authorizeOrThrow([Role.GYM_OWNER, Role.SUPER_ADMIN])
 
   const page = params?.page || 1
   const pageSize = 20

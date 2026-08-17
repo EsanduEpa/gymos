@@ -1,8 +1,8 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { authorize, findUserInGym } from "@/lib/authz"
 import { Role, TrainerLevel } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
@@ -21,13 +21,9 @@ const createTrainerSchema = z.object({
 })
 
 export async function createTrainer(formData: FormData) {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym assigned to user" }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     fullName: formData.get("fullName") as string,
@@ -75,7 +71,7 @@ export async function createTrainer(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "TRAINER_CREATED",
       affectedRecordId: trainer.id,
@@ -91,63 +87,63 @@ export async function createTrainer(formData: FormData) {
 }
 
 export async function updateTrainerStatus(trainerId: string, status: "ACTIVE" | "DEACTIVATED") {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized access" }
-  }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
+
+  const existing = await findUserInGym(gymId, trainerId, Role.PERSONAL_TRAINER)
+  if (!existing) return { error: "Trainer not found at your gym." }
 
   try {
     const trainer = await prisma.user.update({
-      where: { id: trainerId },
+      where: { id: existing.id },
       data: { trainerStatus: status },
     })
 
-    const gymId = session.user.gymId || ""
-    if (gymId) {
-      await logAudit({
-        userId: session.user.id,
-        gymId,
-        actionType: status === "DEACTIVATED" ? "TRAINER_DEACTIVATED" : "TRAINER_UPDATED",
-        affectedRecordId: trainerId,
-        details: { message: `Changed status for trainer ${trainer.fullName} to ${status}` },
-      })
-    }
+    await logAudit({
+      userId: auth.userId,
+      gymId,
+      actionType: status === "DEACTIVATED" ? "TRAINER_DEACTIVATED" : "TRAINER_UPDATED",
+      affectedRecordId: trainer.id,
+      details: { message: `Changed status for trainer ${trainer.fullName} to ${status}` },
+    })
 
     revalidatePath(`/owner/trainers/${trainerId}`)
     revalidatePath("/owner/trainers")
     return { success: true }
   } catch (err) {
+    console.error("Update trainer status error:", err)
     return { error: "Failed to update trainer status" }
   }
 }
 
 export async function approveShiftHours(trainerId: string, shiftStart: string, shiftEnd: string) {
-  const session = await auth()
-  if (!session || (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN")) {
-    return { error: "Unauthorized access" }
-  }
+  const auth = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
+
+  const existing = await findUserInGym(gymId, trainerId, Role.PERSONAL_TRAINER)
+  if (!existing) return { error: "Trainer not found at your gym." }
 
   try {
     const trainer = await prisma.user.update({
-      where: { id: trainerId },
+      where: { id: existing.id },
       data: { shiftStart, shiftEnd },
     })
 
-    const gymId = session.user.gymId || ""
-    if (gymId) {
-      await logAudit({
-        userId: session.user.id,
-        gymId,
-        actionType: "TRAINER_UPDATED",
-        affectedRecordId: trainerId,
-        details: { message: `Approved shift hours for trainer ${trainer.fullName}: ${shiftStart} - ${shiftEnd}` },
-      })
-    }
+    await logAudit({
+      userId: auth.userId,
+      gymId,
+      actionType: "TRAINER_UPDATED",
+      affectedRecordId: trainer.id,
+      details: { message: `Approved shift hours for trainer ${trainer.fullName}: ${shiftStart} - ${shiftEnd}` },
+    })
 
     revalidatePath(`/owner/trainers/${trainerId}`)
     revalidatePath("/owner/trainers")
     return { success: true }
   } catch (err) {
+    console.error("Approve shift hours error:", err)
     return { error: "Failed to approve shift hours" }
   }
 }

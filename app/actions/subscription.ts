@@ -1,15 +1,11 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { authorizeOrThrow } from "@/lib/authz"
+import { Role } from "@prisma/client"
 
 export async function getGymSubscription() {
-  const session = await auth()
-  const gymId = session?.user?.gymId
-
-  if (!gymId) {
-    throw new Error("Unauthorized or Gym ID missing")
-  }
+  const { gymId } = await authorizeOrThrow([Role.GYM_OWNER, Role.SUPER_ADMIN])
 
   let sub = await prisma.gymSubscription.findUnique({
     where: { gymId },

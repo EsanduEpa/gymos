@@ -1,10 +1,16 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { authorize } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+
+// Gym configuration is owner territory. SUPER_ADMIN is included so platform
+// support can correct a gym's setup while impersonating it — the other three
+// config actions previously locked them out for no stated reason.
+const CONFIG_ROLES = [Role.GYM_OWNER, Role.SUPER_ADMIN]
 
 const gymProfileSchema = z.object({
   name: z.string().min(1, "Gym name is required"),
@@ -15,13 +21,9 @@ const gymProfileSchema = z.object({
 })
 
 export async function updateGymProfile(formData: FormData) {
-  const session = await auth()
-  if (!session || session.user.role !== "GYM_OWNER") {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym associated with user" }
+  const auth = await authorize(CONFIG_ROLES)
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     name: formData.get("name") as string,
@@ -43,7 +45,7 @@ export async function updateGymProfile(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "GYM_CONFIG_UPDATED",
       affectedRecordId: gymId,
@@ -66,13 +68,9 @@ const planSchema = z.object({
 })
 
 export async function createMembershipPlan(formData: FormData) {
-  const session = await auth()
-  if (!session || session.user.role !== "GYM_OWNER") {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym associated with user" }
+  const auth = await authorize(CONFIG_ROLES)
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const raw = {
     name: formData.get("name") as string,
@@ -95,7 +93,7 @@ export async function createMembershipPlan(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "GYM_CONFIG_UPDATED",
       affectedRecordId: plan.id,
@@ -111,13 +109,9 @@ export async function createMembershipPlan(formData: FormData) {
 }
 
 export async function updateTrainerPayRates(formData: FormData) {
-  const session = await auth()
-  if (!session || session.user.role !== "GYM_OWNER") {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym associated" }
+  const auth = await authorize(CONFIG_ROLES)
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const level1BaseRate = parseFloat(formData.get("level1BaseRate") as string) / 100
   const level2BaseRate = parseFloat(formData.get("level2BaseRate") as string) / 100
@@ -138,7 +132,7 @@ export async function updateTrainerPayRates(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "PAY_RATES_UPDATED",
       affectedRecordId: gymId,
@@ -153,13 +147,9 @@ export async function updateTrainerPayRates(formData: FormData) {
 }
 
 export async function updateCancellationPolicy(formData: FormData) {
-  const session = await auth()
-  if (!session || session.user.role !== "GYM_OWNER") {
-    return { error: "Unauthorized access" }
-  }
-
-  const gymId = session.user.gymId
-  if (!gymId) return { error: "No gym associated" }
+  const auth = await authorize(CONFIG_ROLES)
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
 
   const cancellationWindowHours = parseInt(formData.get("cancellationWindowHours") as string, 10)
   const minSessionDuration = parseInt(formData.get("minSessionDuration") as string, 10)
@@ -178,7 +168,7 @@ export async function updateCancellationPolicy(formData: FormData) {
     })
 
     await logAudit({
-      userId: session.user.id,
+      userId: auth.userId,
       gymId,
       actionType: "POLICY_UPDATED",
       affectedRecordId: gymId,

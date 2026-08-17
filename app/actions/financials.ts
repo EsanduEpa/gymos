@@ -1,24 +1,13 @@
 "use server"
 
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { ExpenseCategory, PayPeriodStatus, RevenueCategory } from "@prisma/client"
+import { authorizeOrThrow, findUserInGym } from "@/lib/authz"
+import { ExpenseCategory, PayPeriodStatus, RevenueCategory, Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 async function verifyOwnerAuth() {
-  const session = await auth()
-  if (!session || !session.user) {
-    throw new Error("Unauthorized")
-  }
-  const gymId = session.user.gymId
-  if (!gymId) {
-    throw new Error("No gym assigned")
-  }
-  if (session.user.role !== "GYM_OWNER" && session.user.role !== "SUPER_ADMIN") {
-    throw new Error("Forbidden: Gym Owner access required")
-  }
-  return { session, gymId }
+  return authorizeOrThrow([Role.GYM_OWNER, Role.SUPER_ADMIN])
 }
 
 const expenseSchema = z.object({
@@ -559,8 +548,8 @@ export async function recordManualPayment(formData: FormData) {
 
   const { memberId, amount, type, description } = validated.data
 
-  const member = await prisma.user.findUnique({ where: { id: memberId } })
-  if (!member) return { error: "Member not found" }
+  const member = await findUserInGym(gymId, memberId, Role.GYM_MEMBER)
+  if (!member) return { error: "Member not found at your gym." }
 
   let category: RevenueCategory = RevenueCategory.ADD_ON
   if (type === "MEMBERSHIP") category = RevenueCategory.MEMBERSHIP

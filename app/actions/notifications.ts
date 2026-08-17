@@ -28,8 +28,10 @@ export async function markNotificationAsRead(id: string) {
   const session = await auth()
   if (!session?.user?.id) return
 
-  await prisma.notification.update({
-    where: { id },
+  // Scoped by recipient — updateMany simply affects nothing when the id
+  // belongs to someone else, rather than marking another user's alert read.
+  await prisma.notification.updateMany({
+    where: { id, recipientId: session.user.id },
     data: { isRead: true },
   })
 }
