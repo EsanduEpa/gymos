@@ -1,16 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/shared/page-header"
 import { createTrainer } from "@/app/actions/trainers"
+import { TemporaryPasswordNotice } from "@/components/shared/temporary-password-notice"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
+interface IssuedAccount {
+  fullName: string
+  email: string
+  temporaryPassword: string
+  profileHref: string
+}
+
 export function NewTrainerForm() {
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [issued, setIssued] = useState<IssuedAccount | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -23,9 +30,33 @@ export function NewTrainerForm() {
 
     if (res.error) {
       setError(res.error)
-    } else {
-      router.push(`/owner/trainers/${res.trainerId}`)
+    } else if (res.temporaryPassword) {
+      // Hold on this screen — the temporary password exists only right now.
+      setIssued({
+        fullName: String(formData.get("fullName") ?? ""),
+        email: String(formData.get("email") ?? ""),
+        temporaryPassword: res.temporaryPassword,
+        profileHref: `/owner/trainers/${res.trainerId}`,
+      })
     }
+  }
+
+  if (issued) {
+    return (
+      <div>
+        <PageHeader
+          title="Trainer account created"
+          description="Pass these sign-in details to the trainer."
+        />
+        <TemporaryPasswordNotice
+          fullName={issued.fullName}
+          email={issued.email}
+          temporaryPassword={issued.temporaryPassword}
+          continueHref={issued.profileHref}
+          continueLabel="View trainer profile"
+        />
+      </div>
+    )
   }
 
   return (

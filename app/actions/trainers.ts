@@ -3,9 +3,9 @@
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { authorize, findUserInGym } from "@/lib/authz"
+import { generateTemporaryPassword, hashPassword } from "@/lib/passwords"
 import { Role, TrainerLevel } from "@prisma/client"
 import { revalidatePath } from "next/cache"
-import bcrypt from "bcryptjs"
 import { z } from "zod"
 
 const createTrainerSchema = z.object({
@@ -48,12 +48,15 @@ export async function createTrainer(formData: FormData) {
   }
 
   try {
-    const passwordHash = await bcrypt.hash("password123", 10)
+    // Single-use password, shown to the owner once so they can hand it over.
+    const temporaryPassword = generateTemporaryPassword()
+    const passwordHash = await hashPassword(temporaryPassword)
 
     const trainer = await prisma.user.create({
       data: {
         email: validated.data.email,
         password: passwordHash,
+        mustChangePassword: true,
         fullName: validated.data.fullName,
         phone: validated.data.phone,
         role: Role.PERSONAL_TRAINER,
@@ -79,7 +82,7 @@ export async function createTrainer(formData: FormData) {
     })
 
     revalidatePath("/owner/trainers")
-    return { success: true, trainerId: trainer.id }
+    return { success: true, trainerId: trainer.id, temporaryPassword }
   } catch (err) {
     console.error("Failed to create trainer:", err)
     return { error: "Failed to create trainer account." }

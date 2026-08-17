@@ -72,6 +72,8 @@ Two rules of thumb when adding an action:
 | `getUserNotifications` | ✅ | ✅ | ✅ | ✅ | Own records only |
 | `markNotificationAsRead` | ✅ | ✅ | ✅ | ✅ | Own records only |
 | `markAllNotificationsAsRead` | ✅ | ✅ | ✅ | ✅ | Own records only |
+| **account.ts** |
+| `changePassword` | ✅ | ✅ | ✅ | ✅ | Own account only; current password required |
 
 ## Pages that query the database directly
 
@@ -84,6 +86,7 @@ A page is as exposed as an action — the Client 360 leak was a page, not an act
 | `trainer/plans/workout/new`, `trainer/plans/meal/new` | `trainerClientWhere` |
 | `trainer/schedule`, `trainer/earnings` | Own `trainerId` |
 | `member/**` | Own `id`, or gym-scoped for the trainer directory |
+| `change-password` | Signed in; `proxy.ts` forces every other route here while `mustChangePassword` is set |
 
 ## Deliberate decisions
 

@@ -2,11 +2,12 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { authSecret } from "@/lib/env"
 import { Role } from "@prisma/client"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "gymos_secret_key_production_level_auth_2026_super_secure",
+  secret: authSecret(),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -45,6 +46,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           fullName: user.fullName,
           role: user.role,
           gymId: user.gymId,
+          mustChangePassword: user.mustChangePassword,
         }
       },
     }),
@@ -57,6 +59,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.fullName = user.fullName
         token.role = user.role
         token.gymId = user.gymId
+        token.mustChangePassword = user.mustChangePassword ?? false
       }
       return token
     },
@@ -67,6 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.fullName = token.fullName as string
         session.user.role = token.role as Role
         session.user.gymId = token.gymId as string | null
+        session.user.mustChangePassword = Boolean(token.mustChangePassword)
       }
       return session
     },

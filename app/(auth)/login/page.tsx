@@ -5,10 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { Dumbbell, Lock, Mail, AlertCircle } from "lucide-react"
 
+/**
+ * Only same-origin paths are acceptable redirect targets. A bare `/path` is
+ * fine; anything that could resolve to another host is not — including
+ * protocol-relative `//evil.example` and backslash variants that some browsers
+ * normalise to a slash.
+ */
+function safeCallbackUrl(raw: string | null) {
+  if (!raw) return null
+  const value = raw.trim()
+  if (!value.startsWith("/")) return null
+  if (value.startsWith("//") || value.startsWith("/\\")) return null
+  return value
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || ""
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"))
   const paramError = searchParams.get("error")
 
   const [email, setEmail] = useState("")

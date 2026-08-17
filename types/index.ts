@@ -16,6 +16,7 @@ declare module "next-auth" {
     role: Role
     gymId?: string | null
     fullName: string
+    mustChangePassword?: boolean
   }
 
   interface Session {
@@ -25,6 +26,7 @@ declare module "next-auth" {
       fullName: string
       role: Role
       gymId?: string | null
+      mustChangePassword?: boolean
     }
   }
 }
@@ -35,5 +37,6 @@ declare module "next-auth/jwt" {
     role: Role
     gymId?: string | null
     fullName: string
+    mustChangePassword?: boolean
   }
 }

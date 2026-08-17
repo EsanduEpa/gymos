@@ -110,6 +110,9 @@ model User {
   email            String   @unique
   phone            String?
   password         String   // hashed
+  // Set when an account is created with a system-generated temporary password.
+  // Login succeeds but every route redirects to /change-password until cleared.
+  mustChangePassword Boolean @default(false)
   fullName         String
   role             Role
   gymId            String?

@@ -1,7 +1,19 @@
 import { PrismaClient, Role, TrainerLevel, MemberStatus, SessionStatus, SessionType, ShiftStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import { randomInt } from "crypto"
 
 const prisma = new PrismaClient()
+
+// The seed used to give every demo account the same literal password. It now
+// generates one, unless SEED_PASSWORD is set for local convenience. Seeded
+// accounts must change it on first sign-in either way.
+const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
+
+function generatePassword() {
+  let out = ""
+  for (let i = 0; i < 12; i++) out += ALPHABET[randomInt(0, ALPHABET.length)]
+  return out
+}
 
 async function main() {
   console.log("Seeding database...")
@@ -20,7 +32,8 @@ async function main() {
   await prisma.user.deleteMany()
   await prisma.gym.deleteMany()
 
-  const passwordHash = await bcrypt.hash("password123", 10)
+  const seedPassword = process.env.SEED_PASSWORD || generatePassword()
+  const passwordHash = await bcrypt.hash(seedPassword, 10)
 
   // 1. Create SuperAdmin
   await prisma.user.upsert({
@@ -29,6 +42,7 @@ async function main() {
     create: {
       email: "admin@gymos.com",
       password: passwordHash,
+      mustChangePassword: true,
       fullName: "Super Admin",
       role: Role.SUPER_ADMIN,
     },
@@ -71,6 +85,7 @@ async function main() {
     create: {
       email: "owner@fitgym.com",
       password: passwordHash,
+      mustChangePassword: true,
       fullName: "Alex Rivera (Owner)",
       role: Role.GYM_OWNER,
       gymId: gym.id,
@@ -106,6 +121,7 @@ async function main() {
     create: {
       email: "trainer1@fitgym.com",
       password: passwordHash,
+      mustChangePassword: true,
       fullName: "Marcus Vance",
       role: Role.PERSONAL_TRAINER,
       gymId: gym.id,
@@ -125,6 +141,7 @@ async function main() {
     create: {
       email: "trainer2@fitgym.com",
       password: passwordHash,
+      mustChangePassword: true,
       fullName: "Sarah Jenkins",
       role: Role.PERSONAL_TRAINER,
       gymId: gym.id,
@@ -156,6 +173,7 @@ async function main() {
       create: {
         email: m.email,
         password: passwordHash,
+        mustChangePassword: true,
         fullName: m.name,
         role: Role.GYM_MEMBER,
         gymId: gym.id,
@@ -402,6 +420,11 @@ async function main() {
   })
 
   console.log("Database successfully seeded with Part 4 Financials, Expenses, Budgets, and Payroll!")
+  console.log("")
+  console.log("  Seeded accounts share this password — it is shown once:")
+  console.log(`    ${seedPassword}`)
+  console.log("  Each account must choose its own on first sign-in.")
+  console.log("")
 }
 
 main()

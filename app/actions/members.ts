@@ -3,9 +3,9 @@
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { authorize, findUserInGym } from "@/lib/authz"
+import { generateTemporaryPassword, hashPassword } from "@/lib/passwords"
 import { MemberStatus, Role } from "@prisma/client"
 import { revalidatePath } from "next/cache"
-import bcrypt from "bcryptjs"
 import { z } from "zod"
 
 const createMemberSchema = z.object({
@@ -54,7 +54,11 @@ export async function createMember(formData: FormData) {
   if (!plan) return { error: "Invalid membership plan selected." }
 
   try {
-    const passwordHash = await bcrypt.hash("password123", 10)
+    // Every account used to be created with the same literal password. Now
+    // each gets its own single-use one, surfaced to the owner exactly once so
+    // they can hand it over — there is no email delivery until M2-2.
+    const temporaryPassword = generateTemporaryPassword()
+    const passwordHash = await hashPassword(temporaryPassword)
     const startDate = new Date()
     const endDate = new Date()
     endDate.setDate(startDate.getDate() + plan.durationDays)
@@ -63,6 +67,7 @@ export async function createMember(formData: FormData) {
       data: {
         email,
         password: passwordHash,
+        mustChangePassword: true,
         fullName,
         phone,
         dateOfBirth: new Date(dateOfBirth),
@@ -101,7 +106,7 @@ export async function createMember(formData: FormData) {
     })
 
     revalidatePath("/owner/members")
-    return { success: true, memberId: user.id }
+    return { success: true, memberId: user.id, temporaryPassword }
   } catch (err) {
     console.error("Failed to create member:", err)
     return { error: "Failed to create member record." }

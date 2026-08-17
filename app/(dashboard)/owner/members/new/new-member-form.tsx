@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { PageHeader } from "@/components/shared/page-header"
 import { createMember } from "@/app/actions/members"
+import { TemporaryPasswordNotice } from "@/components/shared/temporary-password-notice"
 import { AlertCircle, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
@@ -11,10 +11,17 @@ interface NewMemberFormProps {
   plans: any[]
 }
 
+interface IssuedAccount {
+  fullName: string
+  email: string
+  temporaryPassword: string
+  profileHref: string
+}
+
 export function NewMemberForm({ plans }: NewMemberFormProps) {
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [issued, setIssued] = useState<IssuedAccount | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -27,9 +34,34 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
 
     if (res.error) {
       setError(res.error)
-    } else {
-      router.push(`/owner/members/${res.memberId}`)
+    } else if (res.temporaryPassword) {
+      // Hold on this screen rather than redirecting — the temporary password
+      // is only available now, and navigating away loses it.
+      setIssued({
+        fullName: String(formData.get("fullName") ?? ""),
+        email: String(formData.get("email") ?? ""),
+        temporaryPassword: res.temporaryPassword,
+        profileHref: `/owner/members/${res.memberId}`,
+      })
     }
+  }
+
+  if (issued) {
+    return (
+      <div>
+        <PageHeader
+          title="Member registered"
+          description="Pass these sign-in details to the member."
+        />
+        <TemporaryPasswordNotice
+          fullName={issued.fullName}
+          email={issued.email}
+          temporaryPassword={issued.temporaryPassword}
+          continueHref={issued.profileHref}
+          continueLabel="View member profile"
+        />
+      </div>
+    )
   }
 
   return (

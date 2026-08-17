@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
+import { authSecret } from "@/lib/env"
 
 export async function proxy(req: NextRequest) {
-  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "gymos_secret_key_production_level_auth_2026_super_secure"
+  const secret = authSecret()
   const isProduction = process.env.NODE_ENV === "production"
   
   let token = await getToken({ 
@@ -25,11 +26,26 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const isAuthPage = pathname.startsWith("/login")
+  const isChangePasswordPage = pathname.startsWith("/change-password")
   const isDashboardPage =
     pathname.startsWith("/owner") ||
     pathname.startsWith("/trainer") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/member")
+
+  // An account still on its issued temporary password gets exactly one
+  // destination. Checked before the role routing below so it cannot be stepped
+  // around by navigating straight to a dashboard URL.
+  if (token?.mustChangePassword && !isChangePasswordPage) {
+    return NextResponse.redirect(new URL("/change-password", req.url))
+  }
+
+  if (isChangePasswordPage) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+    return NextResponse.next()
+  }
 
   if (isAuthPage) {
     if (token) {
@@ -89,5 +105,12 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/owner/:path*", "/trainer/:path*", "/admin/:path*", "/member/:path*"],
+  matcher: [
+    "/login",
+    "/change-password",
+    "/owner/:path*",
+    "/trainer/:path*",
+    "/admin/:path*",
+    "/member/:path*",
+  ],
 }
