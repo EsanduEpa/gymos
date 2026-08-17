@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { createNotification } from "@/lib/notifications"
-import { authorize } from "@/lib/authz"
+import { authorize, getEffectiveGymId } from "@/lib/authz"
 import { resolveSessionFee, round2, trainerPayFor } from "@/lib/pricing"
 import { Role, SessionStatus, SessionType, ShiftStatus, TrainerLevel } from "@prisma/client"
 import { Prisma } from "@prisma/client"
@@ -18,14 +18,19 @@ type SessionForAuth = { gymId: string; trainerId: string; clientId: string }
 // Every mutation on a PTSession must confirm the caller is actually a party
 // to that session (or an owner/admin scoped to its gym) — this is the
 // privacy boundary the direct-booking flow depends on.
-function authorizeSessionActor(
+//
+// `effectiveGymId` is the gym the caller is acting within, which for a super
+// admin means the gym they have selected. Comparing against it rather than
+// waving super admins through keeps platform support inside the tenant they
+// chose, so a mistaken click cannot land on another gym's session.
+async function authorizeSessionActor(
   ptSession: SessionForAuth,
   user: SessionActor,
   allowed: { client?: boolean; trainer?: boolean; owner?: boolean }
 ) {
-  if (allowed.owner) {
-    if (user.role === "SUPER_ADMIN") return true
-    if (user.role === "GYM_OWNER" && user.gymId === ptSession.gymId) return true
+  if (allowed.owner && (user.role === "GYM_OWNER" || user.role === "SUPER_ADMIN")) {
+    const effectiveGymId = await getEffectiveGymId(user.role as Role, user.gymId)
+    if (effectiveGymId && effectiveGymId === ptSession.gymId) return true
   }
   if (allowed.trainer && user.role === "PERSONAL_TRAINER" && user.id === ptSession.trainerId) return true
   if (allowed.client && user.role === "GYM_MEMBER" && user.id === ptSession.clientId) return true
@@ -483,7 +488,7 @@ export async function startSession(sessionId: string) {
   const ptSession = await prisma.pTSession.findUnique({ where: { id: sessionId } })
   if (!ptSession) return { error: "Session not found" }
 
-  if (!authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true })) {
+  if (!(await authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true }))) {
     return { error: "Not authorized to modify this session" }
   }
 
@@ -517,7 +522,7 @@ export async function endSession(sessionId: string) {
   })
   if (!ptSession) return { error: "Session not found" }
 
-  if (!authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true })) {
+  if (!(await authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true }))) {
     return { error: "Not authorized to modify this session" }
   }
 
@@ -622,7 +627,7 @@ export async function handleNoShow(sessionId: string) {
   const ptSession = await prisma.pTSession.findUnique({ where: { id: sessionId } })
   if (!ptSession) return { error: "Session not found" }
 
-  if (!authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true })) {
+  if (!(await authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true }))) {
     return { error: "Not authorized to modify this session" }
   }
 
@@ -675,7 +680,7 @@ export async function cancelSession(sessionId: string, reason?: string) {
   })
   if (!ptSession) return { error: "Session not found" }
 
-  if (!authorizeSessionActor(ptSession, session.user, { client: true, trainer: true, owner: true })) {
+  if (!(await authorizeSessionActor(ptSession, session.user, { client: true, trainer: true, owner: true }))) {
     return { error: "Not authorized to modify this session" }
   }
 
@@ -738,7 +743,7 @@ export async function overrideSessionStatus(sessionId: string, status: SessionSt
   const ptSession = await prisma.pTSession.findUnique({ where: { id: sessionId } })
   if (!ptSession) return { error: "Session not found" }
 
-  if (!authorizeSessionActor(ptSession, session.user, { owner: true })) {
+  if (!(await authorizeSessionActor(ptSession, session.user, { owner: true }))) {
     return { error: "Unauthorized owner override" }
   }
 
@@ -769,7 +774,7 @@ export async function updateSessionNotes(sessionId: string, notes: string) {
   const ptSession = await prisma.pTSession.findUnique({ where: { id: sessionId } })
   if (!ptSession) return { error: "Session not found" }
 
-  if (!authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true })) {
+  if (!(await authorizeSessionActor(ptSession, session.user, { trainer: true, owner: true }))) {
     return { error: "Not authorized to modify this session" }
   }
 

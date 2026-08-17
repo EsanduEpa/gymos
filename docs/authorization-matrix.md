@@ -99,13 +99,20 @@ A page is as exposed as an action — the Client 360 leak was a page, not an act
 - **`SUPER_ADMIN` needs a gym before acting as one.** They have no `gymId` of
   their own, so gym-scoped actions require an impersonation target.
 
+## Super admin impersonation
+
+A super admin has no gym of their own. Selecting one on `/admin` writes an
+httpOnly cookie that `getEffectiveGymId` honours **only for that role**, since
+anyone can set a cookie in their own browser.
+
+Every gym-scoped action and every owner page resolves its gym through that
+helper, so impersonation applies uniformly — including
+`authorizeSessionActor`, which compares against the selected gym rather than
+waving super admins through. A super admin with no gym selected can reach
+`/admin` and nothing else; the dashboard shows a persistent banner naming the
+gym being viewed.
+
 ## Known gaps
 
-- **Pages don't resolve impersonation yet.** They read `session.user.gymId`
-  directly rather than `getEffectiveGymId`, so a super admin's impersonation
-  applies to actions but not page reads. Not a data-exposure risk — pages fall
-  back to the viewer's own gym. Finish in M2-2 with the rest of impersonation.
-- **`authorizeSessionActor` grants `SUPER_ADMIN` access to any gym's session**
-  regardless of impersonation target. Intentional today; revisit in M2-2.
 - **Untested.** These rules are enforced but not yet proven. The hostile-tenant
   test in M2-3 is what turns this table into evidence.

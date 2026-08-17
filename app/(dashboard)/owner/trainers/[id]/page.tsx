@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { authorize } from "@/lib/authz"
+import { Role } from "@prisma/client"
 import { TrainerProfileClient } from "./trainer-profile-client"
 
 export default async function TrainerProfilePage({
@@ -8,10 +9,9 @@ export default async function TrainerProfilePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const session = await auth()
-  const gymId = session?.user?.gymId
-
-  if (!gymId) return <div className="p-6">No gym assigned.</div>
+  const authorized = await authorize([Role.GYM_OWNER, Role.SUPER_ADMIN])
+  if (!authorized.ok) return <div className="p-6">{authorized.error}</div>
+  const { gymId } = authorized
 
   const trainer = await prisma.user.findFirst({
     where: {

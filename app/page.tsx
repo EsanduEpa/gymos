@@ -16,6 +16,8 @@ export default async function Home() {
   } else if (role === "GYM_OWNER") {
     redirect("/owner")
   } else {
-    redirect("/login?error=member_app_only")
+    // Members have a portal too; the old branch sent them to /login with an
+    // error param nothing rendered, which then bounced them back here.
+    redirect("/member")
   }
 }

@@ -1,6 +1,5 @@
 "use client"
 
-import { Search } from "lucide-react"
 import NotificationBell from "./NotificationBell"
 
 interface HeaderProps {
@@ -11,15 +10,11 @@ interface HeaderProps {
 export function Header({ fullName, role }: HeaderProps) {
   return (
     <header className="h-13 bg-white border-b border-[#E1E1E4] px-6 flex items-center justify-between shrink-0">
-      {/* Search Field */}
-      <div className="relative w-72">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8B8E98]" />
-        <input
-          type="text"
-          placeholder="Search members, trainers, sessions..."
-          className="w-full pl-9 pr-4 py-1.5 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-full focus:outline-none focus:ring-1 focus:ring-[#007A35] text-[#171B28] placeholder-[#8B8E98]"
-        />
-      </div>
+      {/* Global search is a Phase 2 item. The box that sat here had no handler
+          behind it, and a control that does nothing when a user types into it
+          is worse than no control. The member, trainer and session lists each
+          have their own working search. */}
+      <div />
 
       {/* Actions / Profile */}
       <div className="flex items-center gap-4">

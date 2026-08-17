@@ -11,7 +11,7 @@ import {
   Settings,
   Shield,
   CreditCard,
-  ClipboardList,
+  BarChart3,
   Wallet,
   LogOut,
   UserCheck,
@@ -21,9 +21,11 @@ import { signOut } from "next-auth/react"
 interface SidebarProps {
   role: "SUPER_ADMIN" | "GYM_OWNER" | "PERSONAL_TRAINER" | "GYM_MEMBER"
   fullName: string
+  /** Super admin only: a gym is currently being viewed. */
+  impersonating?: boolean
 }
 
-export function Sidebar({ role, fullName }: SidebarProps) {
+export function Sidebar({ role, fullName, impersonating = false }: SidebarProps) {
   const pathname = usePathname()
 
   const ownerNav = [
@@ -32,6 +34,7 @@ export function Sidebar({ role, fullName }: SidebarProps) {
     { name: "Trainers", href: "/owner/trainers", icon: Dumbbell },
     { name: "Sessions", href: "/owner/sessions", icon: Calendar },
     { name: "Financials", href: "/owner/financials", icon: DollarSign },
+    { name: "Analytics", href: "/owner/analytics", icon: BarChart3 },
     { name: "Gym Config", href: "/owner/gym-config", icon: Settings },
     { name: "Audit Log", href: "/owner/audit-log", icon: Shield },
     { name: "Subscription", href: "/owner/subscription", icon: CreditCard },
@@ -48,9 +51,14 @@ export function Sidebar({ role, fullName }: SidebarProps) {
     { name: "My Sessions", href: "/member/sessions", icon: Calendar },
   ]
 
+  // "Owner View" is only reachable once a gym is being impersonated — a super
+  // admin has no gym of their own, so the link would otherwise land on an
+  // error. The /admin screen is where a gym gets selected.
   const superAdminNav = [
     { name: "All Gyms", href: "/admin", icon: LayoutDashboard },
-    { name: "Owner View", href: "/owner", icon: Settings },
+    ...(impersonating
+      ? [{ name: "Owner View", href: "/owner", icon: Settings }]
+      : []),
   ]
 
   const navItems =

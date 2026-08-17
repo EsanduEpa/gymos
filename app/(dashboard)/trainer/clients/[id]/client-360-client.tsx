@@ -16,7 +16,15 @@ export function Client360Client({ client }: Client360ClientProps) {
   const activePack = client.sessionPacks[0]
   const latestWorkout = client.workoutPlansClient[0]
   const latestMeal = client.mealPlansClient[0]
-  const latestMetric = client.bodyMetrics[0]
+  // Body metrics are a mobile-app feature; the web dashboard cannot record
+  // them, so this profile reports on what it does know — the session history.
+  const completedSessions = client.sessionsClient.filter(
+    (s: any) => s.status === "COMPLETED"
+  ).length
+  const lastCompleted = client.sessionsClient.find((s: any) => s.status === "COMPLETED")
+  const lastSessionLabel = lastCompleted
+    ? `Last on ${new Date(lastCompleted.scheduledAt).toLocaleDateString()}`
+    : "No sessions yet"
 
   return (
     <div className="space-y-6">
@@ -71,8 +79,9 @@ export function Client360Client({ client }: Client360ClientProps) {
           icon={<Calendar className="h-5 w-5" />}
         />
         <StatCard
-          label="Latest Body Weight"
-          value={latestMetric?.weight ? `${latestMetric.weight} kg` : "72.5 kg"}
+          label="Sessions Completed"
+          value={completedSessions}
+          trend={lastSessionLabel}
           icon={<Activity className="h-5 w-5 text-[#007A35]" />}
         />
         <StatCard
@@ -153,25 +162,10 @@ export function Client360Client({ client }: Client360ClientProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#E1E1E4] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-bold uppercase text-[#8B8E98] tracking-wider">
-              Body Metrics Log
-            </h2>
-            <div className="divide-y divide-[#E1E1E4]">
-              {client.bodyMetrics.map((m: any) => (
-                <div key={m.id} className="py-2.5 flex items-center justify-between text-xs">
-                  <span className="text-[#8B8E98]" suppressHydrationWarning>{new Date(m.dateRecorded).toLocaleDateString()}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-[#171B28]">{m.weight} kg</span>
-                    {m.bodyFat && <span className="text-[#4A4D58]">{m.bodyFat}% Fat</span>}
-                  </div>
-                </div>
-              ))}
-              {client.bodyMetrics.length === 0 && (
-                <p className="text-xs text-[#8B8E98] py-4">No body metrics recorded yet.</p>
-              )}
-            </div>
-          </div>
+          {/* Body metrics and progress photos are deferred to the mobile app —
+              nothing in the web dashboard can record them, so this panel only
+              ever showed an empty state promising a feature that doesn't exist.
+              The BodyMetric model stays in the schema for that later build. */}
         </div>
       )}
 

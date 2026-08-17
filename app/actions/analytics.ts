@@ -4,6 +4,27 @@ import { prisma } from "@/lib/prisma"
 import { authorizeOrThrow } from "@/lib/authz"
 import { Role } from "@prisma/client"
 
+/** Working days in a 30-day window — five-day weeks, so roughly 22. */
+const WORKING_DAYS_PER_MONTH = 22
+
+/**
+ * Hours in a trainer's daily shift, from the "HH:MM" strings on their record.
+ * Falls back to eight hours when a shift has not been set, which is the same
+ * default the trainer form applies.
+ */
+function shiftLengthHours(start: string | null, end: string | null) {
+  if (!start || !end) return 8
+
+  const [sh, sm] = start.split(":").map(Number)
+  const [eh, em] = end.split(":").map(Number)
+  if ([sh, sm, eh, em].some((n) => Number.isNaN(n))) return 8
+
+  const minutes = eh * 60 + em - (sh * 60 + sm)
+  // A shift crossing midnight wraps into the next day.
+  const spanned = minutes > 0 ? minutes : minutes + 24 * 60
+  return spanned / 60
+}
+
 export async function getAnalyticsData() {
   const { gymId } = await authorizeOrThrow([Role.GYM_OWNER, Role.SUPER_ADMIN])
 
@@ -25,14 +46,24 @@ export async function getAnalyticsData() {
 
   const trainerUtilisationData = trainers.map((t) => {
     const totalHoursScheduled = t.sessionsTrainer.reduce((sum, s) => sum + s.duration / 60, 0)
-    // Assume 20 working days in 30 days * 8 hours = 160 available hours
-    const availableHours = 160
+
+    // Capacity comes from the trainer's own shift, not a blanket assumption.
+    // Every trainer was previously measured against a hardcoded 160 hours,
+    // which made a part-timer look permanently idle and a full-timer's
+    // utilisation meaningless.
+    const shiftHours = shiftLengthHours(t.shiftStart, t.shiftEnd)
+    const availableHours = shiftHours * WORKING_DAYS_PER_MONTH
     const idleHours = Math.max(0, availableHours - totalHoursScheduled)
 
     return {
       name: t.fullName.split(" ")[0],
       scheduled: Math.round(totalHoursScheduled),
       idle: Math.round(idleHours),
+      availableHours: Math.round(availableHours),
+      utilisation:
+        availableHours > 0
+          ? Math.min(100, Math.round((totalHoursScheduled / availableHours) * 100))
+          : 0,
     }
   })
 
