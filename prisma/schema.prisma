@@ -76,56 +76,56 @@ enum ExpenseCategory {
 }
 
 model Gym {
-  id                      String   @id @default(cuid())
+  id                      String  @id @default(cuid())
   name                    String
   address                 String?
   logo                    String?
   phone                   String?
   email                   String?
-  operatingHours          Json?    // { mon: {open, close}, tue: ... }
-  cancellationWindowHours Int      @default(24)
-  noShowDeduction         Boolean  @default(true)
-  lateCancelDeduction     Boolean  @default(true)
-  minSessionDuration      Int      @default(20) // minutes
+  operatingHours          Json? // { mon: {open, close}, tue: ... }
+  cancellationWindowHours Int     @default(24)
+  noShowDeduction         Boolean @default(true)
+  lateCancelDeduction     Boolean @default(true)
+  minSessionDuration      Int     @default(20) // minutes
 
   // PT session rate card — the list price of a session at this gym. Used to
   // price session packs and any session not funded by one. A pack, once sold,
   // records its own price and is unaffected by later edits here.
-  defaultSessionFee       Float    @default(50)
-  level2SessionFee        Float?   // optional premium for LEVEL_2 trainers
-  introSessionFee         Float?   // optional rate for INTRODUCTORY sessions
+  defaultSessionFee Float  @default(50)
+  level2SessionFee  Float? // optional premium for LEVEL_2 trainers
+  introSessionFee   Float? // optional rate for INTRODUCTORY sessions
 
   // Trainer pay, as a share of the session fee actually charged.
-  level1BaseRate          Float    @default(0.4)  // 40%
-  level2BaseRate          Float    @default(0.5)  // 50%
-  offShiftPremium         Float    @default(0.1)  // 10%
-  payPeriod               String   @default("MONTHLY") // WEEKLY or MONTHLY
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  level1BaseRate  Float    @default(0.4) // 40%
+  level2BaseRate  Float    @default(0.5) // 50%
+  offShiftPremium Float    @default(0.1) // 10%
+  payPeriod       String   @default("MONTHLY") // WEEKLY or MONTHLY
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  users                   User[]
-  membershipPlans         MembershipPlan[]
-  sessions                PTSession[]
-  revenues                RevenueRecord[]
-  expenses                ExpenseRecord[]
-  auditLogs               AuditLog[]
-  budgets                 CategoryBudget[]
-  payPeriods              PayPeriod[]
-  subscription            GymSubscription?
+  users           User[]
+  membershipPlans MembershipPlan[]
+  sessions        PTSession[]
+  revenues        RevenueRecord[]
+  expenses        ExpenseRecord[]
+  auditLogs       AuditLog[]
+  budgets         CategoryBudget[]
+  payPeriods      PayPeriod[]
+  subscription    GymSubscription?
 }
 
 model User {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  phone            String?
-  password         String   // hashed
+  id                 String  @id @default(cuid())
+  email              String  @unique
+  phone              String?
+  password           String // hashed
   // Set when an account is created with a system-generated temporary password.
   // Login succeeds but every route redirects to /change-password until cleared.
   mustChangePassword Boolean @default(false)
-  fullName         String
-  role             Role
-  gymId            String?
-  gym              Gym?     @relation(fields: [gymId], references: [id])
+  fullName           String
+  role               Role
+  gymId              String?
+  gym                Gym?    @relation(fields: [gymId], references: [id], onDelete: Cascade)
 
   // Member-specific
   dateOfBirth      DateTime?
@@ -135,39 +135,39 @@ model User {
   memberStatus     MemberStatus?
 
   // Trainer-specific
-  trainerLevel     TrainerLevel?
-  specialisations  String[]  // array of strings
-  yearsExperience  Int?
-  shiftStart       String?   // "09:00"
-  shiftEnd         String?   // "17:00"
-  bio              String?
-  ratingAvg        Float?    @default(0)
-  trainerStatus    String?   @default("ACTIVE")
+  trainerLevel    TrainerLevel?
+  specialisations String[] // array of strings
+  yearsExperience Int?
+  shiftStart      String? // "09:00"
+  shiftEnd        String? // "17:00"
+  bio             String?
+  ratingAvg       Float?        @default(0)
+  trainerStatus   String?       @default("ACTIVE")
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   memberships         Membership[]
   sessionPacks        SessionPack[]
-  sessionsClient      PTSession[] @relation("ClientSessions")
-  sessionsTrainer     PTSession[] @relation("TrainerSessions")
-  workoutPlansTrainer WorkoutPlan[] @relation("WorkoutPlanTrainer")
-  workoutPlansClient  WorkoutPlan[] @relation("WorkoutPlanClient")
-  mealPlansTrainer    MealPlan[] @relation("MealPlanTrainer")
-  mealPlansClient     MealPlan[] @relation("MealPlanClient")
+  sessionsClient      PTSession[]     @relation("ClientSessions")
+  sessionsTrainer     PTSession[]     @relation("TrainerSessions")
+  workoutPlansTrainer WorkoutPlan[]   @relation("WorkoutPlanTrainer")
+  workoutPlansClient  WorkoutPlan[]   @relation("WorkoutPlanClient")
+  mealPlansTrainer    MealPlan[]      @relation("MealPlanTrainer")
+  mealPlansClient     MealPlan[]      @relation("MealPlanClient")
   progressPhotos      ProgressPhoto[]
   bodyMetrics         BodyMetric[]
   payRecords          PayRecord[]
-  messagesSent        Message[] @relation("SentMessages")
-  messagesReceived    Message[] @relation("ReceivedMessages")
   notifications       Notification[]
   auditLogs           AuditLog[]
+
+  @@index([gymId, role])
 }
 
 model MembershipPlan {
   id           String   @id @default(cuid())
   gymId        String
-  gym          Gym      @relation(fields: [gymId], references: [id])
+  gym          Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
   name         String
   description  String?
   price        Float
@@ -175,80 +175,99 @@ model MembershipPlan {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  memberships  Membership[]
+  memberships Membership[]
+
+  @@index([gymId])
 }
 
 model Membership {
-  id               String   @id @default(cuid())
+  id               String         @id @default(cuid())
   userId           String
-  user             User     @relation(fields: [userId], references: [id])
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   membershipPlanId String
-  plan             MembershipPlan @relation(fields: [membershipPlanId], references: [id])
+  plan             MembershipPlan @relation(fields: [membershipPlanId], references: [id], onDelete: Cascade)
   startDate        DateTime
   endDate          DateTime
-  status           MemberStatus @default(ACTIVE)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  status           MemberStatus   @default(ACTIVE)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([membershipPlanId])
+  // Drives the membership-expiry sweep.
+  @@index([status, endDate])
 }
 
 model SessionPack {
-  id                String   @id @default(cuid())
+  id                String     @id @default(cuid())
   userId            String
-  user              User     @relation(fields: [userId], references: [id])
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalSessions     Int
   remainingSessions Int
   status            PackStatus @default(ACTIVE)
-  purchaseDate      DateTime @default(now())
+  purchaseDate      DateTime   @default(now())
   expiryDate        DateTime
   price             Float?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Every pack lookup is 'this member's usable packs, oldest first'.
+  @@index([userId, status, expiryDate])
 }
 
 model PTSession {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   gymId       String
-  gym         Gym      @relation(fields: [gymId], references: [id])
+  gym         Gym           @relation(fields: [gymId], references: [id], onDelete: Cascade)
   trainerId   String
-  trainer     User     @relation("TrainerSessions", fields: [trainerId], references: [id])
+  trainer     User          @relation("TrainerSessions", fields: [trainerId], references: [id], onDelete: Cascade)
   clientId    String
-  client      User     @relation("ClientSessions", fields: [clientId], references: [id])
+  client      User          @relation("ClientSessions", fields: [clientId], references: [id], onDelete: Cascade)
   scheduledAt DateTime
-  duration    Int      // minutes
-  type        SessionType @default(IN_PERSON)
+  duration    Int // minutes
+  type        SessionType   @default(IN_PERSON)
   status      SessionStatus @default(SCHEDULED)
   // Price snapshot, resolved at booking. Never re-read from the rate card, so
   // a later rate change cannot alter a booked session's price or trainer pay.
   fee         Float
-  noShow      Boolean  @default(false)
+  noShow      Boolean       @default(false)
   notes       String?
   shiftStatus ShiftStatus?
   startedAt   DateTime?
   endedAt     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  payRecords  PayRecord[]
+  payRecords PayRecord[]
+
+  @@index([gymId, scheduledAt])
+  @@index([gymId, status])
+  // Collision checks and the trainer roster.
+  @@index([trainerId, status])
+  @@index([clientId, status])
 }
 
 model WorkoutPlan {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   trainerId   String
-  trainer     User     @relation("WorkoutPlanTrainer", fields: [trainerId], references: [id])
+  trainer     User      @relation("WorkoutPlanTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
   clientId    String
-  client      User     @relation("WorkoutPlanClient", fields: [clientId], references: [id])
+  client      User      @relation("WorkoutPlanClient", fields: [clientId], references: [id], onDelete: Cascade)
   name        String
   description String?
   startDate   DateTime?
   endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  exercises   WorkoutExercise[]
+  exercises WorkoutExercise[]
+
+  @@index([trainerId])
+  @@index([clientId])
 }
 
 model WorkoutExercise {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   workoutPlanId String
   workoutPlan   WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
   name          String
@@ -257,117 +276,142 @@ model WorkoutExercise {
   weight        Float?
   duration      Int? // minutes
   notes         String?
+
+  @@index([workoutPlanId])
 }
 
 model MealPlan {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   trainerId String
-  trainer   User     @relation("MealPlanTrainer", fields: [trainerId], references: [id])
+  trainer   User      @relation("MealPlanTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
   clientId  String
-  client    User     @relation("MealPlanClient", fields: [clientId], references: [id])
+  client    User      @relation("MealPlanClient", fields: [clientId], references: [id], onDelete: Cascade)
   name      String
   startDate DateTime?
   endDate   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  entries   MealPlanEntry[]
+  entries MealPlanEntry[]
+
+  @@index([trainerId])
+  @@index([clientId])
 }
 
 model MealPlanEntry {
   id         String   @id @default(cuid())
   mealPlanId String
   mealPlan   MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
-  dayOfWeek  Int      // 0-6
-  mealType   String   // Breakfast, Lunch, Dinner, Snack
+  dayOfWeek  Int // 0-6
+  mealType   String // Breakfast, Lunch, Dinner, Snack
   foodItem   String
   calories   Int?
   protein    Float?
   carbs      Float?
   fats       Float?
+
+  @@index([mealPlanId])
 }
 
 model ProgressPhoto {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   url       String
   dateTaken DateTime @default(now())
   notes     String?
+
+  @@index([userId])
 }
 
 model BodyMetric {
   id           String   @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   dateRecorded DateTime @default(now())
   weight       Float?
   bodyFat      Float?
   muscleMass   Float?
   notes        String?
+
+  @@index([userId])
 }
 
 model PayPeriod {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   gymId     String
-  gym       Gym      @relation(fields: [gymId], references: [id])
+  gym       Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
   startDate DateTime
   endDate   DateTime
   status    PayPeriodStatus @default(OPEN)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   payRecords PayRecord[]
+
+  @@index([gymId, status])
 }
 
 model PayRecord {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   trainerId   String
-  trainer     User     @relation(fields: [trainerId], references: [id])
+  trainer     User       @relation(fields: [trainerId], references: [id], onDelete: Cascade)
   payPeriodId String
-  payPeriod   PayPeriod @relation(fields: [payPeriodId], references: [id])
+  payPeriod   PayPeriod  @relation(fields: [payPeriodId], references: [id], onDelete: Cascade)
   sessionId   String?
-  session     PTSession? @relation(fields: [sessionId], references: [id])
+  // Pay history outlives the session it came from.
+  session     PTSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   amount      Float
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([trainerId])
+  @@index([payPeriodId])
+  @@index([sessionId])
 }
 
 model RevenueRecord {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   gymId       String
-  gym         Gym      @relation(fields: [gymId], references: [id])
+  gym         Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
   amount      Float
   category    RevenueCategory
-  date        DateTime @default(now())
+  date        DateTime        @default(now())
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Financial reports always filter by gym and date range.
+  @@index([gymId, date])
+  @@index([gymId, category])
 }
 
 model ExpenseRecord {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   gymId       String
-  gym         Gym      @relation(fields: [gymId], references: [id])
+  gym         Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
   amount      Float
   category    ExpenseCategory
-  date        DateTime @default(now())
+  date        DateTime        @default(now())
   description String?
-  isRecurring Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isRecurring Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([gymId, date])
+  @@index([gymId, category])
 }
 
 model CategoryBudget {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   gymId     String
-  gym       Gym      @relation(fields: [gymId], references: [id])
+  gym       Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
   category  ExpenseCategory
   amount    Float
   month     DateTime // represents the month/year
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   @@unique([gymId, category, month])
 }
@@ -400,14 +444,17 @@ enum AuditActionType {
 model AuditLog {
   id               String          @id @default(uuid())
   gymId            String
-  userId           String          // User who performed the action
+  userId           String // User who performed the action
   actionType       AuditActionType
-  affectedRecordId String          // ID of the member, session, etc.
-  details          String?         // JSON stringified additional info
+  affectedRecordId String // ID of the member, session, etc.
+  details          String? // JSON stringified additional info
   createdAt        DateTime        @default(now())
 
-  gym              Gym             @relation(fields: [gymId], references: [id], onDelete: Cascade)
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([gymId, createdAt])
+  @@index([userId])
 }
 
 enum SubscriptionTier {
@@ -425,30 +472,17 @@ enum SubscriptionStatus {
 }
 
 model GymSubscription {
-  id                   String             @id @default(uuid())
-  gymId                String             @unique
-  tier                 SubscriptionTier   @default(STARTER)
-  status               SubscriptionStatus @default(TRIAL)
-  billingCycle         String             @default("MONTHLY") // "MONTHLY" or "ANNUAL"
-  nextBillingDate      DateTime
-  paymentMethodLast4   String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  id                 String             @id @default(uuid())
+  gymId              String             @unique
+  tier               SubscriptionTier   @default(STARTER)
+  status             SubscriptionStatus @default(TRIAL)
+  billingCycle       String             @default("MONTHLY") // "MONTHLY" or "ANNUAL"
+  nextBillingDate    DateTime
+  paymentMethodLast4 String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
-  gym                  Gym                @relation(fields: [gymId], references: [id], onDelete: Cascade)
-}
-
-model Message {
-  id          String    @id @default(uuid())
-  senderId    String
-  receiverId  String
-  content     String
-  isRead      Boolean   @default(false)
-  readAt      DateTime?
-  createdAt   DateTime  @default(now())
-
-  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  gym Gym @relation(fields: [gymId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
@@ -460,7 +494,6 @@ enum NotificationType {
   MEMBERSHIP_EXPIRING
   BUDGET_EXCEEDED
   PAYROLL_READY
-  MESSAGE_RECEIVED
 }
 
 model Notification {
@@ -473,5 +506,8 @@ model Notification {
   isRead      Boolean          @default(false)
   createdAt   DateTime         @default(now())
 
-  recipient   User             @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
 }
