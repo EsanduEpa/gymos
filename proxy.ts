@@ -28,7 +28,8 @@ export async function proxy(req: NextRequest) {
   const isDashboardPage =
     pathname.startsWith("/owner") ||
     pathname.startsWith("/trainer") ||
-    pathname.startsWith("/admin")
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/member")
 
   if (isAuthPage) {
     if (token) {
@@ -39,8 +40,10 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(new URL("/owner", req.url))
       } else if (role === "PERSONAL_TRAINER") {
         return NextResponse.redirect(new URL("/trainer", req.url))
+      } else if (role === "GYM_MEMBER") {
+        return NextResponse.redirect(new URL("/member", req.url))
       } else {
-        return NextResponse.redirect(new URL("/login?error=member_app_only", req.url))
+        return NextResponse.redirect(new URL("/login", req.url))
       }
     }
     return NextResponse.next()
@@ -59,16 +62,25 @@ export async function proxy(req: NextRequest) {
     if (pathname.startsWith("/admin") && role !== "SUPER_ADMIN") {
       if (role === "GYM_OWNER") return NextResponse.redirect(new URL("/owner", req.url))
       if (role === "PERSONAL_TRAINER") return NextResponse.redirect(new URL("/trainer", req.url))
+      if (role === "GYM_MEMBER") return NextResponse.redirect(new URL("/member", req.url))
       return NextResponse.redirect(new URL("/login", req.url))
     }
 
     if (pathname.startsWith("/owner") && role !== "GYM_OWNER" && role !== "SUPER_ADMIN") {
       if (role === "PERSONAL_TRAINER") return NextResponse.redirect(new URL("/trainer", req.url))
+      if (role === "GYM_MEMBER") return NextResponse.redirect(new URL("/member", req.url))
       return NextResponse.redirect(new URL("/login", req.url))
     }
 
     if (pathname.startsWith("/trainer") && role !== "PERSONAL_TRAINER" && role !== "SUPER_ADMIN") {
       if (role === "GYM_OWNER") return NextResponse.redirect(new URL("/owner", req.url))
+      if (role === "GYM_MEMBER") return NextResponse.redirect(new URL("/member", req.url))
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+
+    if (pathname.startsWith("/member") && role !== "GYM_MEMBER" && role !== "SUPER_ADMIN") {
+      if (role === "GYM_OWNER") return NextResponse.redirect(new URL("/owner", req.url))
+      if (role === "PERSONAL_TRAINER") return NextResponse.redirect(new URL("/trainer", req.url))
       return NextResponse.redirect(new URL("/login", req.url))
     }
   }
@@ -77,5 +89,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/owner/:path*", "/trainer/:path*", "/admin/:path*"],
+  matcher: ["/login", "/owner/:path*", "/trainer/:path*", "/admin/:path*", "/member/:path*"],
 }

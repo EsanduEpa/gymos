@@ -1,26 +1,41 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusBadge } from "@/components/shared/status-badge"
-import { startSession, endSession, handleNoShow, updateSessionNotes } from "@/app/actions/sessions"
-import { Calendar, Clock, Play, CheckCircle, AlertTriangle, Plus, FileText, User } from "lucide-react"
+import { startSession, endSession, handleNoShow, updateSessionNotes, respondToSessionRequest } from "@/app/actions/sessions"
+import { Clock, Play, FileText, Check, X, Inbox } from "lucide-react"
+
+interface ScheduleSession {
+  id: string
+  scheduledAt: string | Date
+  duration: number
+  type: string
+  status: string
+  notes: string | null
+  shiftStatus: string | null
+  startedAt: string | Date | null
+  client: { fullName: string }
+}
 
 interface TrainerScheduleClientProps {
-  sessions: any[]
+  sessions: ScheduleSession[]
 }
 
 export function TrainerScheduleClient({ sessions }: TrainerScheduleClientProps) {
   const [loading, setLoading] = useState(false)
   const [activeTimer, setActiveTimer] = useState<number>(0)
-  const [selectedNotesSession, setSelectedNotesSession] = useState<any>(null)
+  const [selectedNotesSession, setSelectedNotesSession] = useState<ScheduleSession | null>(null)
   const [notesText, setNotesText] = useState("")
+  const [declineTarget, setDeclineTarget] = useState<ScheduleSession | null>(null)
+  const [declineReason, setDeclineReason] = useState("")
 
+  const pendingRequests = sessions.filter((s) => s.status === "PENDING_CONFIRMATION")
+  const scheduledSessions = sessions.filter((s) => s.status !== "PENDING_CONFIRMATION")
   const activeSession = sessions.find((s) => s.status === "ACTIVE")
 
   useEffect(() => {
-    let interval: any = null
+    let interval: ReturnType<typeof setInterval> | undefined
     if (activeSession && activeSession.startedAt) {
       const startTime = new Date(activeSession.startedAt).getTime()
       interval = setInterval(() => {
@@ -67,21 +82,91 @@ export function TrainerScheduleClient({ sessions }: TrainerScheduleClientProps) 
     setSelectedNotesSession(null)
   }
 
+  const handleAccept = async (sessionId: string) => {
+    setLoading(true)
+    const res = await respondToSessionRequest(sessionId, "ACCEPT")
+    setLoading(false)
+    if (res.error) alert(res.error)
+  }
+
+  const handleDeclineSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!declineTarget) return
+    setLoading(true)
+    const res = await respondToSessionRequest(declineTarget.id, "DECLINE", declineReason || undefined)
+    setLoading(false)
+    if (res.error) {
+      alert(res.error)
+      return
+    }
+    setDeclineTarget(null)
+    setDeclineReason("")
+  }
+
   return (
     <div>
       <PageHeader
         title="Trainer Daily Schedule"
-        description="Manage your scheduled sessions, active training timer, and completion logs (FR-036 / SCR-16)."
-        action={
-          <Link
-            href="/owner/sessions/book"
-            className="px-4 py-2 bg-[#007A35] hover:bg-[#00622A] text-white text-xs font-bold rounded-lg flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Book Session
-          </Link>
-        }
+        description="Manage incoming session requests, your confirmed schedule, and completion logs (FR-036 / SCR-16)."
       />
+
+      {/* Pending Session Requests */}
+      {pendingRequests.length > 0 && (
+        <div className="mb-6 bg-white rounded-xl border border-[#E1E1E4] shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
+            <Inbox className="h-4 w-4 text-blue-700" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-blue-700">
+              Pending Session Requests ({pendingRequests.length})
+            </h2>
+          </div>
+          <div className="divide-y divide-[#E1E1E4]">
+            {pendingRequests.map((req) => (
+              <div
+                key={req.id}
+                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="font-bold text-sm text-[#171B28]">{req.client.fullName}</h3>
+                    <StatusBadge status={req.status} />
+                  </div>
+                  <p className="text-xs text-[#8B8E98] mt-0.5" suppressHydrationWarning>
+                    {new Date(req.scheduledAt).toLocaleString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{" "}
+                    • {req.type} • {req.duration} mins
+                  </p>
+                  {req.notes && (
+                    <p className="text-xs text-[#4A4D58] mt-1.5 bg-[#F5F4F5] p-2 rounded border border-[#E1E1E4] italic">
+                      &ldquo;{req.notes}&rdquo;
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleAccept(req.id)}
+                    disabled={loading}
+                    className="px-3.5 py-1.5 bg-[#007A35] hover:bg-[#00622A] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Accept
+                  </button>
+                  <button
+                    onClick={() => setDeclineTarget(req)}
+                    disabled={loading}
+                    className="px-3 py-1.5 bg-[#FDE4E4] hover:bg-[#F8C4C4] text-[#D71920] text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" /> Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Active Session Live Timer Banner */}
       {activeSession && (
@@ -120,7 +205,7 @@ export function TrainerScheduleClient({ sessions }: TrainerScheduleClientProps) 
 
       {/* Sessions Grid / List */}
       <div className="space-y-4">
-        {sessions.map((s) => (
+        {scheduledSessions.map((s) => (
           <div
             key={s.id}
             className="bg-white rounded-xl border border-[#E1E1E4] p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#007A35]/30 transition-colors"
@@ -188,9 +273,9 @@ export function TrainerScheduleClient({ sessions }: TrainerScheduleClientProps) 
           </div>
         ))}
 
-        {sessions.length === 0 && (
+        {scheduledSessions.length === 0 && pendingRequests.length === 0 && (
           <div className="bg-white rounded-xl border border-[#E1E1E4] p-12 text-center text-[#8B8E98] text-xs">
-            No personal training sessions scheduled for today.
+            No personal training sessions scheduled.
           </div>
         )}
       </div>
@@ -228,6 +313,48 @@ export function TrainerScheduleClient({ sessions }: TrainerScheduleClientProps) 
                   className="px-4 py-2 bg-[#007A35] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-sm"
                 >
                   Save Notes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Decline Request Modal */}
+      {declineTarget && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-[#E1E1E4] max-w-md w-full p-6 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#171B28]">Decline Session Request</h3>
+            <p className="text-xs text-[#8B8E98]">
+              Let {declineTarget.client.fullName} know why you&apos;re declining this request (optional).
+            </p>
+
+            <form onSubmit={handleDeclineSubmit} className="space-y-4">
+              <textarea
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                rows={3}
+                placeholder="e.g. I'm fully booked at that time — try requesting a different slot."
+                className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
+              />
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeclineTarget(null)
+                    setDeclineReason("")
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-[#4A4D58] bg-[#F5F4F5] hover:bg-[#EAEAEA] rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-[#D71920] hover:bg-[#B5141A] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-sm"
+                >
+                  Confirm Decline
                 </button>
               </div>
             </form>

@@ -13,12 +13,16 @@ export default async function NewMealPlanPage({
 
   if (!trainerId) return <div className="p-6">Unauthorized</div>
 
-  const hireRequests = await prisma.hireRequest.findMany({
-    where: { trainerId, status: "ACCEPTED" },
-    include: { client: true },
+  // Fetch trainer's assigned clients (confirmed/completed session together)
+  const clientSessions = await prisma.pTSession.findMany({
+    where: { trainerId, status: { in: ["SCHEDULED", "ACTIVE", "COMPLETED"] } },
+    distinct: ["clientId"],
+    select: { clientId: true },
   })
 
-  const clients = hireRequests.map((hr) => hr.client)
+  const clients = await prisma.user.findMany({
+    where: { id: { in: clientSessions.map((s) => s.clientId) } },
+  })
 
   return (
     <div className="max-w-3xl">

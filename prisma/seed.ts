@@ -14,7 +14,6 @@ async function main() {
   await prisma.expenseRecord.deleteMany()
   await prisma.revenueRecord.deleteMany()
   await prisma.pTSession.deleteMany()
-  await prisma.hireRequest.deleteMany()
   await prisma.sessionPack.deleteMany()
   await prisma.membership.deleteMany()
   await prisma.membershipPlan.deleteMany()
@@ -202,31 +201,46 @@ async function main() {
     },
   })
 
-  // 8. Create Trainer Hire Requests
-  await prisma.hireRequest.create({
+  // 8. Create PT Sessions establishing trainer-client relationships directly
+  // (the request -> accept/decline flow on PTSession is now the hire mechanism)
+  await prisma.pTSession.create({
     data: {
+      gymId: gym.id,
       clientId: createdMembers[0].id,
       trainerId: trainer1.id,
-      status: "ACCEPTED",
-      message: "Goal: Build upper body muscle strength",
+      scheduledAt: new Date(Date.now() - 3 * 86400000),
+      duration: 60,
+      status: "COMPLETED",
+      fee: 45.0,
+      notes: "Goal: Build upper body muscle strength",
+      startedAt: new Date(Date.now() - 3 * 86400000),
+      endedAt: new Date(Date.now() - 3 * 86400000 + 60 * 60000),
     },
   })
 
-  await prisma.hireRequest.create({
+  await prisma.pTSession.create({
     data: {
+      gymId: gym.id,
       clientId: createdMembers[1].id,
       trainerId: trainer2.id,
-      status: "ACCEPTED",
-      message: "Goal: Post-rehab mobility and weight loss",
+      scheduledAt: new Date(Date.now() + 2 * 86400000),
+      duration: 60,
+      status: "SCHEDULED",
+      fee: 50.0,
+      notes: "Goal: Post-rehab mobility and weight loss",
     },
   })
 
-  await prisma.hireRequest.create({
+  await prisma.pTSession.create({
     data: {
+      gymId: gym.id,
       clientId: createdMembers[2].id,
       trainerId: trainer1.id,
-      status: "PENDING",
-      message: "Looking for 1-on-1 powerlifting coaching",
+      scheduledAt: new Date(Date.now() + 1 * 86400000),
+      duration: 60,
+      status: "PENDING_CONFIRMATION",
+      fee: 50.0,
+      notes: "Looking for 1-on-1 powerlifting coaching",
     },
   })
 
@@ -241,42 +255,42 @@ async function main() {
         gymId: gym.id,
         amount: 499.99,
         category: "MEMBERSHIP",
-        date: new Date(now.getTime() - 15 * 86400000),
+        date: new Date(Date.now() - 15 * 86400000),
         description: "Annual Premium Membership - John Doe",
       },
       {
         gymId: gym.id,
         amount: 499.99,
         category: "MEMBERSHIP",
-        date: new Date(now.getTime() - 10 * 86400000),
+        date: new Date(Date.now() - 10 * 86400000),
         description: "Annual Premium Membership - Jane Smith",
       },
       {
         gymId: gym.id,
         amount: 450.0,
         category: "PT_SESSION",
-        date: new Date(now.getTime() - 8 * 86400000),
+        date: new Date(Date.now() - 8 * 86400000),
         description: "10 PT Session Pack - John Doe",
       },
       {
         gymId: gym.id,
         amount: 250.0,
         category: "PT_SESSION",
-        date: new Date(now.getTime() - 5 * 86400000),
+        date: new Date(Date.now() - 5 * 86400000),
         description: "5 PT Session Pack - Jane Smith",
       },
       {
         gymId: gym.id,
         amount: 35.0,
         category: "ADD_ON",
-        date: new Date(now.getTime() - 2 * 86400000),
+        date: new Date(Date.now() - 2 * 86400000),
         description: "Whey Protein & Gym Towel - Member Retail",
       },
       {
         gymId: gym.id,
         amount: 60.0,
         category: "ADD_ON",
-        date: new Date(now.getTime() - 1 * 86400000),
+        date: new Date(Date.now() - 1 * 86400000),
         description: "BCAA Powder & FitCore Shaker Bottle",
       },
     ],

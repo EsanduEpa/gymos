@@ -13,11 +13,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState(
-    paramError === "member_app_only"
-      ? "Members must use the GymOS Mobile App to log in."
-      : ""
-  )
+  const [error, setError] = useState(paramError ? "Please sign in to continue." : "")
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,12 +34,10 @@ function LoginForm() {
         return
       }
 
-      // Force a hard navigation to guarantee server components run cleanly on Vercel
-      if (callbackUrl) {
-        window.location.href = callbackUrl
-      } else {
-        window.location.href = "/owner"
-      }
+      // Force a hard navigation to guarantee server components run cleanly on Vercel.
+      // With no callbackUrl, re-hit /login itself — proxy.ts sees the fresh
+      // session token and redirects to the correct dashboard for the user's role.
+      window.location.href = callbackUrl || "/login"
     } catch (err) {
       setError("An unexpected error occurred. Please try again.")
       setLoading(false)
@@ -119,7 +113,7 @@ function LoginForm() {
       {/* Footer info */}
       <div className="mt-8 pt-6 border-t border-[#E1E1E4] text-center">
         <p className="text-xs text-[#8B8E98]">
-          GymOS Phase 1 Web Portal • For Gym Owners & Personal Trainers
+          GymOS Phase 1 Web Portal • For Gym Owners, Trainers & Members
         </p>
       </div>
     </div>

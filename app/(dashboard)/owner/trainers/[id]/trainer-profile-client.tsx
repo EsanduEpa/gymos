@@ -20,7 +20,7 @@ export function TrainerProfileClient({ trainer }: TrainerProfileClientProps) {
   const [loading, setLoading] = useState(false)
 
   const completedSessions = trainer.sessionsTrainer.filter((s: any) => s.status === "COMPLETED").length
-  const activeClientsCount = trainer.hireRequestsTrainer.length
+  const activeClientsCount = trainer.activeClientsCount
 
   const handleDeactivate = async () => {
     setLoading(true)

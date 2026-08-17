@@ -25,10 +25,6 @@ export default async function TrainerProfilePage({
         orderBy: { scheduledAt: "desc" },
         take: 10,
       },
-      hireRequestsTrainer: {
-        include: { client: true },
-        where: { status: "ACCEPTED" },
-      },
     },
   })
 
@@ -36,9 +32,15 @@ export default async function TrainerProfilePage({
     return <div className="p-6">Trainer record not found.</div>
   }
 
+  const distinctClients = await prisma.pTSession.findMany({
+    where: { trainerId: id, status: { in: ["SCHEDULED", "ACTIVE", "COMPLETED"] } },
+    distinct: ["clientId"],
+    select: { clientId: true },
+  })
+
   return (
     <div className="space-y-6">
-      <TrainerProfileClient trainer={trainer} />
+      <TrainerProfileClient trainer={{ ...trainer, activeClientsCount: distinctClients.length }} />
     </div>
   )
 }

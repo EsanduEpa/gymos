@@ -40,8 +40,12 @@ export function Sidebar({ role, fullName }: SidebarProps) {
   const trainerNav = [
     { name: "Schedule", href: "/trainer/schedule", icon: Calendar },
     { name: "Clients", href: "/trainer/clients", icon: Users },
-    { name: "Hire Requests", href: "/trainer/hire-requests", icon: UserCheck },
     { name: "Earnings", href: "/trainer/earnings", icon: Wallet },
+  ]
+
+  const memberNav = [
+    { name: "Trainers", href: "/member/trainers", icon: UserCheck },
+    { name: "My Sessions", href: "/member/sessions", icon: Calendar },
   ]
 
   const superAdminNav = [
@@ -52,6 +56,8 @@ export function Sidebar({ role, fullName }: SidebarProps) {
   const navItems =
     role === "PERSONAL_TRAINER"
       ? trainerNav
+      : role === "GYM_MEMBER"
+      ? memberNav
       : role === "SUPER_ADMIN"
       ? superAdminNav
       : ownerNav

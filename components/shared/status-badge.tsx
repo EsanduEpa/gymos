@@ -13,8 +13,10 @@ export function StatusBadge({ status, className = "" }: StatusBadgeProps) {
     style = "bg-[#FDE4E4] text-[#D71920] border-[#F8B4B4]"
   } else if (normalized === "SUSPENDED" || normalized === "INACTIVE") {
     style = "bg-[#FFF0E0] text-[#F97316] border-[#FFD8B3]"
-  } else if (normalized === "PENDING") {
+  } else if (normalized === "PENDING" || normalized === "PENDING_CONFIRMATION") {
     style = "bg-blue-50 text-blue-700 border-blue-200"
+  } else if (normalized === "DECLINED") {
+    style = "bg-[#FDE4E4] text-[#D71920] border-[#F8B4B4]"
   }
 
   return (

@@ -229,11 +229,13 @@ export function OwnerSessionsClient({ sessions, trainers }: OwnerSessionsClientP
           className="px-3.5 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none font-semibold text-[#4A4D58]"
         >
           <option value="ALL">All Statuses</option>
+          <option value="PENDING_CONFIRMATION">PENDING CONFIRMATION</option>
           <option value="SCHEDULED">SCHEDULED</option>
           <option value="ACTIVE">ACTIVE (Live)</option>
           <option value="COMPLETED">COMPLETED</option>
           <option value="MISSED">MISSED (No-Show)</option>
           <option value="CANCELLED">CANCELLED</option>
+          <option value="DECLINED">DECLINED</option>
         </select>
       </div>
 
