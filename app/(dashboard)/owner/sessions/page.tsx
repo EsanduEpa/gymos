@@ -15,7 +15,6 @@ export default async function OwnerSessionsPage() {
       trainer: true,
     },
     orderBy: { scheduledAt: "desc" },
-    take: 100,
   })
 
   const trainers = await prisma.user.findMany({
@@ -23,9 +22,22 @@ export default async function OwnerSessionsPage() {
     select: { id: true, fullName: true },
   })
 
+  const members = await prisma.user.findMany({
+    where: { gymId, role: "GYM_MEMBER" },
+    include: {
+      memberships: {
+        include: { plan: true },
+        orderBy: { startDate: "desc" },
+        take: 1,
+      },
+      sessionPacks: true,
+    },
+    orderBy: { fullName: "asc" },
+  })
+
   return (
     <div className="space-y-6">
-      <OwnerSessionsClient sessions={sessions} trainers={trainers} />
+      <OwnerSessionsClient sessions={sessions} trainers={trainers} members={members} />
     </div>
   )
 }
