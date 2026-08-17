@@ -15,6 +15,7 @@ import {
   Wallet,
   LogOut,
   UserCheck,
+  X,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -23,9 +24,18 @@ interface SidebarProps {
   fullName: string
   /** Super admin only: a gym is currently being viewed. */
   impersonating?: boolean
+  /** Drawer state, used only below the md breakpoint. */
+  open?: boolean
+  onClose?: () => void
 }
 
-export function Sidebar({ role, fullName, impersonating = false }: SidebarProps) {
+export function Sidebar({
+  role,
+  fullName,
+  impersonating = false,
+  open = false,
+  onClose,
+}: SidebarProps) {
   const pathname = usePathname()
 
   const ownerNav = [
@@ -71,10 +81,33 @@ export function Sidebar({ role, fullName, impersonating = false }: SidebarProps)
       : ownerNav
 
   return (
-    <aside className="w-56 shrink-0 bg-[#171B28] text-[#777B87] min-h-screen flex flex-col justify-between select-none">
+    <>
+      {/* Backdrop, mobile only. Clicking away is how most people expect to
+          dismiss a drawer, so it matters as much as the close button. */}
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        id="primary-navigation"
+        // Off-canvas below md, a static column from md up. `fixed` only applies
+        // on small screens so the desktop layout is untouched.
+        className={`
+          fixed inset-y-0 left-0 z-40 w-64 shrink-0 bg-[#171B28] text-[#777B87]
+          flex flex-col justify-between select-none overflow-y-auto
+          transition-transform duration-200 ease-out
+          md:static md:z-auto md:w-56 md:translate-x-0 md:transition-none
+          ${open ? "translate-x-0" : "-translate-x-full"}
+        `}
+        aria-label="Main navigation"
+      >
       <div>
         {/* Logo Section */}
-        <div className="p-5 border-b border-[#232736]">
+        <div className="p-5 border-b border-[#232736] flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-[#007A35] flex items-center justify-center text-white shrink-0">
               <Dumbbell className="h-4 w-4" />
@@ -86,6 +119,14 @@ export function Sidebar({ role, fullName, impersonating = false }: SidebarProps)
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close navigation menu"
+            className="md:hidden p-1.5 -mr-1 rounded-md text-[#8B8E98] hover:text-white hover:bg-[#202534] transition-colors cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Navigation Items */}
@@ -100,7 +141,11 @@ export function Sidebar({ role, fullName, impersonating = false }: SidebarProps)
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-150 ${
+                // Tells a screen reader which item is the current page; the
+                // green background alone conveys nothing to one.
+                aria-current={isActive ? "page" : undefined}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#45B472] ${
                   isActive
                     ? "bg-[#007A35] text-white shadow-sm"
                     : "text-[#777B87] hover:bg-[#202534] hover:text-white"
@@ -121,12 +166,13 @@ export function Sidebar({ role, fullName, impersonating = false }: SidebarProps)
         </div>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#777B87] hover:bg-[#202534] hover:text-red-400 transition-colors duration-150 cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#777B87] hover:bg-[#202534] hover:text-red-400 transition-colors duration-150 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#45B472]"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           <span>Sign Out</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

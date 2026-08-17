@@ -90,12 +90,12 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
       <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="fullName" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Full Name *
             </label>
             <input
               type="text"
-              name="fullName"
+              id="fullName" name="fullName"
               required
               placeholder="e.g. Johnathan Doe"
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -104,12 +104,12 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="email" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Email Address *
               </label>
               <input
                 type="email"
-                name="email"
+                id="email" name="email"
                 required
                 placeholder="john@example.com"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -117,12 +117,12 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="phone" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Phone Number *
               </label>
               <input
                 type="text"
-                name="phone"
+                id="phone" name="phone"
                 required
                 placeholder="+94 77 123 4567"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -132,12 +132,12 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="dateOfBirth" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Date of Birth *
               </label>
               <input
                 type="date"
-                name="dateOfBirth"
+                id="dateOfBirth" name="dateOfBirth"
                 required
                 defaultValue="1998-01-01"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -145,12 +145,12 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="emergencyContact" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Emergency Contact
               </label>
               <input
                 type="text"
-                name="emergencyContact"
+                id="emergencyContact" name="emergencyContact"
                 placeholder="Name / Phone"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               />
@@ -158,11 +158,11 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="membershipPlanId" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Select Membership Plan *
             </label>
             <select
-              name="membershipPlanId"
+              id="membershipPlanId" name="membershipPlanId"
               required
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35] font-semibold text-[#171B28]"
             >
@@ -176,11 +176,11 @@ export function NewMemberForm({ plans }: NewMemberFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="healthNotes" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Health Notes / Allergies
             </label>
             <textarea
-              name="healthNotes"
+              id="healthNotes" name="healthNotes"
               rows={3}
               placeholder="Any existing medical conditions, injuries, or trainer notes..."
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"

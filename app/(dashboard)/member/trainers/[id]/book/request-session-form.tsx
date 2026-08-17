@@ -76,10 +76,10 @@ export function RequestSessionForm({ trainer, remainingSessions }: RequestSessio
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Date *</label>
+              <label htmlFor="date" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Date *</label>
               <input
                 type="date"
-                name="date"
+                id="date" name="date"
                 required
                 min={todayStr}
                 defaultValue={todayStr}
@@ -88,10 +88,10 @@ export function RequestSessionForm({ trainer, remainingSessions }: RequestSessio
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Time (HH:mm) *</label>
+              <label htmlFor="time" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Time (HH:mm) *</label>
               <input
                 type="time"
-                name="time"
+                id="time" name="time"
                 required
                 defaultValue="10:00"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -101,9 +101,9 @@ export function RequestSessionForm({ trainer, remainingSessions }: RequestSessio
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Session Type *</label>
+              <label htmlFor="type" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Session Type *</label>
               <select
-                name="type"
+                id="type" name="type"
                 required
                 defaultValue="IN_PERSON"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35] font-semibold text-[#171B28]"
@@ -115,10 +115,10 @@ export function RequestSessionForm({ trainer, remainingSessions }: RequestSessio
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Duration (minutes)</label>
+              <label htmlFor="duration" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Duration (minutes)</label>
               <input
                 type="number"
-                name="duration"
+                id="duration" name="duration"
                 defaultValue={60}
                 min={20}
                 step={5}
@@ -128,11 +128,11 @@ export function RequestSessionForm({ trainer, remainingSessions }: RequestSessio
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="notes" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Goals / Notes for Your Trainer
             </label>
             <textarea
-              name="notes"
+              id="notes" name="notes"
               rows={3}
               placeholder="What would you like to focus on? Any injuries or special requests..."
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"

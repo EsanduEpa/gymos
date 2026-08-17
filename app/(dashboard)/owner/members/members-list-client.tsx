@@ -107,6 +107,7 @@ export function MembersListClient({ members, plans }: MembersListClientProps) {
           <input
             type="text"
             placeholder="Search by member name, email, or phone..."
+            aria-label="Search members"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -114,6 +115,7 @@ export function MembersListClient({ members, plans }: MembersListClientProps) {
         </div>
 
         <select
+          aria-label="Filter members by status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3.5 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none font-semibold text-[#4A4D58]"
@@ -130,7 +132,9 @@ export function MembersListClient({ members, plans }: MembersListClientProps) {
         columns={columns}
         data={filteredMembers}
         keyExtractor={(m) => m.id}
-        emptyMessage="No members match your search criteria."
+        label="Members"
+        emptyMessage="No members found"
+        emptyHint="Try a different search or status filter, or register your first member."
       />
     </div>
   )

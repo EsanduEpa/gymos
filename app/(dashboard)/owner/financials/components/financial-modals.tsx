@@ -43,9 +43,9 @@ export function LogExpenseDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Amount ($)</label>
+            <label htmlFor="amount" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Amount ($)</label>
             <input
-              name="amount"
+              id="amount" name="amount"
               type="number"
               step="0.01"
               required
@@ -55,9 +55,9 @@ export function LogExpenseDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Category</label>
+            <label htmlFor="category" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Category</label>
             <select
-              name="category"
+              id="category" name="category"
               required
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"
             >
@@ -72,9 +72,9 @@ export function LogExpenseDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Date</label>
+            <label htmlFor="date" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Date</label>
             <input
-              name="date"
+              id="date" name="date"
               type="date"
               required
               defaultValue={new Date().toISOString().split("T")[0]}
@@ -83,9 +83,9 @@ export function LogExpenseDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Description</label>
+            <label htmlFor="description" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Description</label>
             <input
-              name="description"
+              id="description" name="description"
               type="text"
               placeholder="e.g. Electricity bill for main floor"
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"
@@ -165,9 +165,9 @@ export function SetBudgetDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Category</label>
+            <label htmlFor="category" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Category</label>
             <select
-              name="category"
+              id="category" name="category"
               required
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"
             >
@@ -182,9 +182,9 @@ export function SetBudgetDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Monthly Budget Limit ($)</label>
+            <label htmlFor="amount" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Monthly Budget Limit ($)</label>
             <input
-              name="amount"
+              id="amount" name="amount"
               type="number"
               step="0.01"
               required
@@ -257,9 +257,9 @@ export function RecordDeskPaymentDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Select Member</label>
+            <label htmlFor="memberId" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Select Member</label>
             <select
-              name="memberId"
+              id="memberId" name="memberId"
               required
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"
             >
@@ -271,9 +271,9 @@ export function RecordDeskPaymentDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Payment Type</label>
+            <label htmlFor="type" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Payment Type</label>
             <select
-              name="type"
+              id="type" name="type"
               required
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"
             >
@@ -287,9 +287,9 @@ export function RecordDeskPaymentDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Amount ($)</label>
+            <label htmlFor="amount" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Amount ($)</label>
             <input
-              name="amount"
+              id="amount" name="amount"
               type="number"
               step="0.01"
               required
@@ -299,9 +299,9 @@ export function RecordDeskPaymentDialog({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Description / Receipt Note</label>
+            <label htmlFor="description" className="block text-xs font-semibold text-gray-700 uppercase mb-1">Description / Receipt Note</label>
             <input
-              name="description"
+              id="description" name="description"
               type="text"
               placeholder="Cash payment at front desk"
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"

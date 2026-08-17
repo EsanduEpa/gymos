@@ -360,12 +360,12 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
 
             <form onSubmit={handleIssuePackSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                <label htmlFor="totalSessions" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                   Total Sessions *
                 </label>
                 <input
                   type="number"
-                  name="totalSessions"
+                  id="totalSessions" name="totalSessions"
                   required
                   defaultValue={10}
                   className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -373,13 +373,13 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                <label htmlFor="price" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                   Pack Total Price ($) *
                 </label>
                 <input
                   type="number"
                   step="0.01"
-                  name="price"
+                  id="price" name="price"
                   required
                   defaultValue={450.00}
                   className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -387,12 +387,12 @@ export function MemberProfileClient({ member }: MemberProfileClientProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                <label htmlFor="durationDays" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                   Validity Duration (Days)
                 </label>
                 <input
                   type="number"
-                  name="durationDays"
+                  id="durationDays" name="durationDays"
                   defaultValue={90}
                   className="w-full px-3 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
                 />

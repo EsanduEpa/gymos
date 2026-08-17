@@ -115,6 +115,7 @@ export function TrainersListClient({ trainers }: TrainersListClientProps) {
           <input
             type="text"
             placeholder="Search trainers by name or email..."
+            aria-label="Search trainers"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -126,7 +127,9 @@ export function TrainersListClient({ trainers }: TrainersListClientProps) {
         columns={columns}
         data={filteredTrainers}
         keyExtractor={(t) => t.id}
-        emptyMessage="No trainers found."
+        label="Trainers"
+        emptyMessage="No trainers found"
+        emptyHint="Add a trainer to start scheduling PT sessions."
       />
     </div>
   )

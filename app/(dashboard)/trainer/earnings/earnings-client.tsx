@@ -87,7 +87,9 @@ export function TrainerEarningsClient({ payRecords }: TrainerEarningsClientProps
         columns={columns}
         data={payRecords}
         keyExtractor={(r) => r.id}
-        emptyMessage="No earnings records logged for this pay period yet."
+        label="Earnings"
+        emptyMessage="Nothing earned yet this period"
+        emptyHint="Pay is recorded when you complete a session."
       />
     </div>
   )

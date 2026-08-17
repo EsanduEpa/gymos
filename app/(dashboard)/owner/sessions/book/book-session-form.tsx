@@ -61,7 +61,7 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
       <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="clientId" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Select Member (Eligible Pack Balance &gt; 0) *
             </label>
             {members.length === 0 ? (
@@ -70,7 +70,7 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
               </p>
             ) : (
               <select
-                name="clientId"
+                id="clientId" name="clientId"
                 required
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35] font-semibold text-[#171B28]"
               >
@@ -85,11 +85,11 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="trainerId" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Select Personal Trainer *
             </label>
             <select
-              name="trainerId"
+              id="trainerId" name="trainerId"
               required
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35] font-semibold text-[#171B28]"
             >
@@ -104,12 +104,12 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="date" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Date *
               </label>
               <input
                 type="date"
-                name="date"
+                id="date" name="date"
                 required
                 defaultValue={todayStr}
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -117,12 +117,12 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="time" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Time (HH:mm) *
               </label>
               <input
                 type="time"
-                name="time"
+                id="time" name="time"
                 required
                 defaultValue="10:00"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -132,11 +132,11 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="type" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Session Type *
               </label>
               <select
-                name="type"
+                id="type" name="type"
                 required
                 defaultValue="IN_PERSON"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35] font-semibold text-[#171B28]"
@@ -148,12 +148,12 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="duration" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Duration (minutes)
               </label>
               <input
                 type="number"
-                name="duration"
+                id="duration" name="duration"
                 defaultValue={60}
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               />
@@ -161,11 +161,11 @@ export function BookSessionForm({ members, trainers }: BookSessionFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="notes" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Session Notes / Instructions
             </label>
             <textarea
-              name="notes"
+              id="notes" name="notes"
               rows={3}
               placeholder="Focus areas (e.g. Legs & Core), injuries, or special client requests..."
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"

@@ -205,10 +205,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
         <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm max-w-2xl">
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Gym Name</label>
+              <label htmlFor="name" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Gym Name</label>
               <input
                 type="text"
-                name="name"
+                id="name" name="name"
                 defaultValue={gym.name}
                 required
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -216,10 +216,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Address</label>
+              <label htmlFor="address" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Address</label>
               <input
                 type="text"
-                name="address"
+                id="address" name="address"
                 defaultValue={gym.address || ""}
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               />
@@ -227,20 +227,20 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Phone Number</label>
+                <label htmlFor="phone" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Phone Number</label>
                 <input
                   type="text"
-                  name="phone"
+                  id="phone" name="phone"
                   defaultValue={gym.phone || ""}
                   className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Contact Email</label>
+                <label htmlFor="email" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Contact Email</label>
                 <input
                   type="email"
-                  name="email"
+                  id="email" name="email"
                   defaultValue={gym.email || ""}
                   className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
                 />
@@ -248,9 +248,9 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Pay Period Calculation</label>
+              <label htmlFor="payPeriod" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">Pay Period Calculation</label>
               <select
-                name="payPeriod"
+                id="payPeriod" name="payPeriod"
                 defaultValue={gym.payPeriod}
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               >
@@ -290,10 +290,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
               <h3 className="text-xs font-bold uppercase text-[#8B8E98] mb-4">Create Membership Plan</h3>
               <form onSubmit={handleAddPlanSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#4A4D58] mb-1">Plan Name</label>
+                  <label htmlFor="name" className="block text-xs font-semibold text-[#4A4D58] mb-1">Plan Name</label>
                   <input
                     type="text"
-                    name="name"
+                    id="name" name="name"
                     required
                     placeholder="e.g. Monthly Standard"
                     className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none"
@@ -301,10 +301,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#4A4D58] mb-1">Description</label>
+                  <label htmlFor="description" className="block text-xs font-semibold text-[#4A4D58] mb-1">Description</label>
                   <input
                     type="text"
-                    name="description"
+                    id="description" name="description"
                     placeholder="Standard access..."
                     className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none"
                   />
@@ -312,11 +312,11 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-[#4A4D58] mb-1">Price ($)</label>
+                    <label htmlFor="price" className="block text-xs font-semibold text-[#4A4D58] mb-1">Price ($)</label>
                     <input
                       type="number"
                       step="0.01"
-                      name="price"
+                      id="price" name="price"
                       required
                       placeholder="49.99"
                       className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none"
@@ -324,10 +324,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#4A4D58] mb-1">Duration (Days)</label>
+                    <label htmlFor="durationDays" className="block text-xs font-semibold text-[#4A4D58] mb-1">Duration (Days)</label>
                     <input
                       type="number"
-                      name="durationDays"
+                      id="durationDays" name="durationDays"
                       required
                       placeholder="30"
                       className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none"
@@ -468,13 +468,13 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
           <form onSubmit={handleRatesSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                <label htmlFor="level1BaseRate" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                   Level 1 Base Rate (%)
                 </label>
                 <input
                   type="number"
                   step="1"
-                  name="level1BaseRate"
+                  id="level1BaseRate" name="level1BaseRate"
                   defaultValue={gym.level1BaseRate * 100}
                   required
                   className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -482,13 +482,13 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+                <label htmlFor="level2BaseRate" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                   Level 2 Base Rate (%)
                 </label>
                 <input
                   type="number"
                   step="1"
-                  name="level2BaseRate"
+                  id="level2BaseRate" name="level2BaseRate"
                   defaultValue={gym.level2BaseRate * 100}
                   required
                   className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -497,13 +497,13 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="offShiftPremium" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Off-Shift Premium (%)
               </label>
               <input
                 type="number"
                 step="1"
-                name="offShiftPremium"
+                id="offShiftPremium" name="offShiftPremium"
                 defaultValue={gym.offShiftPremium * 100}
                 required
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -531,12 +531,12 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
         <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm max-w-2xl space-y-6">
           <form onSubmit={handlePolicySubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="cancellationWindowHours" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Cancellation Window (Hours)
               </label>
               <input
                 type="number"
-                name="cancellationWindowHours"
+                id="cancellationWindowHours" name="cancellationWindowHours"
                 defaultValue={gym.cancellationWindowHours}
                 required
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -547,12 +547,12 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="minSessionDuration" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Minimum Session Duration (Minutes)
               </label>
               <input
                 type="number"
-                name="minSessionDuration"
+                id="minSessionDuration" name="minSessionDuration"
                 defaultValue={gym.minSessionDuration}
                 required
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -563,10 +563,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
             </div>
 
             <div className="space-y-3 pt-2">
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label htmlFor="noShowDeduction" className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  name="noShowDeduction"
+                  id="noShowDeduction" name="noShowDeduction"
                   defaultChecked={gym.noShowDeduction}
                   className="rounded border-[#E1E1E4] text-[#007A35] focus:ring-[#007A35]"
                 />
@@ -575,10 +575,10 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
                 </span>
               </label>
 
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label htmlFor="lateCancelDeduction" className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  name="lateCancelDeduction"
+                  id="lateCancelDeduction" name="lateCancelDeduction"
                   defaultChecked={gym.lateCancelDeduction}
                   className="rounded border-[#E1E1E4] text-[#007A35] focus:ring-[#007A35]"
                 />

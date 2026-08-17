@@ -85,12 +85,12 @@ export function NewTrainerForm() {
       <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="fullName" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Full Name *
             </label>
             <input
               type="text"
-              name="fullName"
+              id="fullName" name="fullName"
               required
               placeholder="e.g. David Miller"
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -99,12 +99,12 @@ export function NewTrainerForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="email" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Email Address *
               </label>
               <input
                 type="email"
-                name="email"
+                id="email" name="email"
                 required
                 placeholder="david@fitgym.com"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -112,12 +112,12 @@ export function NewTrainerForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="phone" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Phone Number *
               </label>
               <input
                 type="text"
-                name="phone"
+                id="phone" name="phone"
                 required
                 placeholder="+94 77 987 6543"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -127,11 +127,11 @@ export function NewTrainerForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="trainerLevel" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Trainer Level *
               </label>
               <select
-                name="trainerLevel"
+                id="trainerLevel" name="trainerLevel"
                 required
                 defaultValue="LEVEL_1"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35] font-semibold text-[#171B28]"
@@ -142,12 +142,12 @@ export function NewTrainerForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="yearsExperience" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Years of Experience
               </label>
               <input
                 type="number"
-                name="yearsExperience"
+                id="yearsExperience" name="yearsExperience"
                 placeholder="5"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               />
@@ -155,12 +155,12 @@ export function NewTrainerForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="specialisations" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Specialisations (comma separated)
             </label>
             <input
               type="text"
-              name="specialisations"
+              id="specialisations" name="specialisations"
               placeholder="e.g. Strength Training, Bodybuilding, CrossFit"
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
             />
@@ -168,24 +168,24 @@ export function NewTrainerForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="shiftStart" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Shift Start (HH:mm)
               </label>
               <input
                 type="text"
-                name="shiftStart"
+                id="shiftStart" name="shiftStart"
                 defaultValue="08:00"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+              <label htmlFor="shiftEnd" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
                 Shift End (HH:mm)
               </label>
               <input
                 type="text"
-                name="shiftEnd"
+                id="shiftEnd" name="shiftEnd"
                 defaultValue="17:00"
                 className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
               />
@@ -193,11 +193,11 @@ export function NewTrainerForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
+            <label htmlFor="bio" className="block text-xs font-semibold text-[#4A4D58] uppercase mb-1">
               Biography / Summary
             </label>
             <textarea
-              name="bio"
+              id="bio" name="bio"
               rows={3}
               placeholder="Brief professional bio for client visibility..."
               className="w-full px-3.5 py-2 text-xs bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"

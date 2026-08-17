@@ -43,8 +43,17 @@ export default function NotificationBell() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="p-2 rounded-lg text-[#8B8E98] hover:text-[#171B28] hover:bg-gray-100 relative transition-colors"
+        // The unread count is drawn as a badge, which conveys nothing to a
+        // screen reader — so it goes in the label too.
+        aria-label={
+          data.unreadCount > 0
+            ? `Notifications, ${data.unreadCount} unread`
+            : "Notifications"
+        }
+        aria-expanded={open}
+        className="p-2 rounded-lg text-[#8B8E98] hover:text-[#171B28] hover:bg-gray-100 relative transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#007A35]"
       >
         <Bell className="h-5 w-5" />
         {data.unreadCount > 0 && (

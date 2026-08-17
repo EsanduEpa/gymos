@@ -215,6 +215,7 @@ export function DailySessionsView({ sessions, trainers }: DailySessionsViewProps
           <input
             type="text"
             placeholder="Search member or trainer name..."
+            aria-label="Search sessions by member or trainer"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -235,6 +236,7 @@ export function DailySessionsView({ sessions, trainers }: DailySessionsViewProps
         </select>
 
         <select
+          aria-label="Filter sessions by status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3.5 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none font-semibold text-[#4A4D58]"

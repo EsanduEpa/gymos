@@ -93,6 +93,7 @@ export function TrainerClientsClient({ clients }: TrainerClientsClientProps) {
           <input
             type="text"
             placeholder="Search clients by name or email..."
+            aria-label="Search clients"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#007A35]"
@@ -104,7 +105,9 @@ export function TrainerClientsClient({ clients }: TrainerClientsClientProps) {
         columns={columns}
         data={filteredClients}
         keyExtractor={(c) => c.id}
-        emptyMessage="No assigned clients found. Accept hire requests to add clients."
+        label="Clients"
+        emptyMessage="No clients yet"
+        emptyHint="A member becomes your client once you accept a session request from them."
       />
     </div>
   )
