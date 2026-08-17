@@ -19,6 +19,23 @@ function safeCallbackUrl(raw: string | null) {
   return value
 }
 
+/**
+ * Auth.js reports a failed credentials sign-in generically so it cannot be used
+ * to discover which emails have accounts. Two cases are worth naming, because
+ * telling a locked-out or suspended user their password is wrong sends them
+ * round in circles.
+ */
+function signInMessage(code: string | undefined) {
+  switch (code) {
+    case "rate_limited":
+      return "Too many sign-in attempts. Wait a minute and try again."
+    case "account_inactive":
+      return "This account is no longer active. Please contact your gym."
+    default:
+      return "Invalid email or password."
+  }
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -43,7 +60,7 @@ function LoginForm() {
       })
 
       if (res?.error) {
-        setError("Invalid email or password.")
+        setError(signInMessage(res.code))
         setLoading(false)
         return
       }

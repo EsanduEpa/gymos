@@ -69,6 +69,24 @@ bank slip or cash in hand — at the moment the owner verifies it. Creating a
 `RevenueRecord` when a pack is sold would double-count: once at sale, again as
 each session is consumed.
 
+## Money is still Float — deliberately, for now
+
+Every money column is a `Float`, which cannot represent currency exactly. This
+is scheduled for conversion to `Decimal` in its own packet before launch, and
+the decision to defer it was measured rather than assumed:
+
+- `round2()` runs at every write, so **stored values are exact to the cent**.
+- Summing 6,000 pay records of $18.00 drifts by **$0.000** — float64 carries
+  ~15 significant digits, and these are two-decimal values in the hundreds.
+- The residual exposure is display-time aggregates, not stored data.
+
+The conversion touches 13 schema fields, 29 arithmetic sites and 32
+server-to-client boundaries (Prisma returns `Decimal.js` instances, which Next
+will not pass to a client component unserialized). It must land **before the
+client has live financial records** — after that it becomes a data migration.
+
+**If you are adding a money field, keep passing it through `round2()` on write.**
+
 ## Known inconsistency
 
 Membership revenue is recognized in full at sale (`createMember`), not spread
