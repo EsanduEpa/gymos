@@ -1,0 +1,1072 @@
+<title>GymOS Demo Runbook</title>
+<style>
+  :root {
+    --ground: #FBFBF9;
+    --surface: #FFFFFF;
+    --surface-2: #F3F5F2;
+    --border: #E1E4DF;
+    --border-strong: #CBD1C9;
+    --ink: #14181C;
+    --ink-2: #5B6360;
+    --ink-3: #838B86;
+    --accent: #007A35;
+    --accent-deep: #005B27;
+    --accent-soft: #E2F3E9;
+    --warn: #8A5800;
+    --warn-soft: #FAEFD9;
+    --warn-line: #E0BE7C;
+    --crit: #A32219;
+    --crit-soft: #FAE8E6;
+    --crit-line: #E0A49E;
+    --role-owner-fg: #005B27;
+    --role-owner-bg: #DFF1E7;
+    --role-trainer-fg: #1B4F7A;
+    --role-trainer-bg: #DEEBF6;
+    --role-member-fg: #5A3A82;
+    --role-member-bg: #EBE3F5;
+    --role-admin-fg: #4A4F55;
+    --role-admin-bg: #E6E9E7;
+    --shadow: 0 1px 2px rgba(20, 24, 28, .05), 0 1px 12px rgba(20, 24, 28, .03);
+
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0D110F;
+      --surface: #151A17;
+      --surface-2: #1C221E;
+      --border: #29312C;
+      --border-strong: #3A443D;
+      --ink: #E7EBE7;
+      --ink-2: #9BA49E;
+      --ink-3: #79837D;
+      --accent: #4FC07C;
+      --accent-deep: #7FD8A2;
+      --accent-soft: #14301E;
+      --warn: #DFB264;
+      --warn-soft: #2C2410;
+      --warn-line: #574616;
+      --crit: #EF9189;
+      --crit-soft: #321512;
+      --crit-line: #612A24;
+      --role-owner-fg: #7FD8A2;
+      --role-owner-bg: #16301F;
+      --role-trainer-fg: #8CC0E8;
+      --role-trainer-bg: #14262F;
+      --role-member-fg: #C3A8E8;
+      --role-member-bg: #241C33;
+      --role-admin-fg: #B2BAB4;
+      --role-admin-bg: #232825;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 1px 12px rgba(0, 0, 0, .2);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0D110F;
+    --surface: #151A17;
+    --surface-2: #1C221E;
+    --border: #29312C;
+    --border-strong: #3A443D;
+    --ink: #E7EBE7;
+    --ink-2: #9BA49E;
+    --ink-3: #79837D;
+    --accent: #4FC07C;
+    --accent-deep: #7FD8A2;
+    --accent-soft: #14301E;
+    --warn: #DFB264;
+    --warn-soft: #2C2410;
+    --warn-line: #574616;
+    --crit: #EF9189;
+    --crit-soft: #321512;
+    --crit-line: #612A24;
+    --role-owner-fg: #7FD8A2;
+    --role-owner-bg: #16301F;
+    --role-trainer-fg: #8CC0E8;
+    --role-trainer-bg: #14262F;
+    --role-member-fg: #C3A8E8;
+    --role-member-bg: #241C33;
+    --role-admin-fg: #B2BAB4;
+    --role-admin-bg: #232825;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 1px 12px rgba(0, 0, 0, .2);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 28px 96px;
+    display: grid;
+    grid-template-columns: 216px minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+
+  /* ---- rail ---- */
+  .rail { position: sticky; top: 32px; display: flex; flex-direction: column; gap: 20px; }
+  .rail-mark {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .rail nav { display: flex; flex-direction: column; gap: 1px; }
+  .rail a {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+    padding: 5px 8px 5px 0;
+    text-decoration: none;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    border-radius: 4px;
+    transition: color .15s;
+  }
+  .rail a:hover { color: var(--accent); }
+  .rail a span:first-child {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+  }
+  .rail a:hover span:first-child { color: var(--accent); }
+  .rail-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ---- masthead ---- */
+  .masthead { margin-bottom: 44px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: clamp(34px, 5vw, 46px);
+    line-height: 1.06;
+    letter-spacing: -.024em;
+    font-weight: 680;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: 17px;
+    line-height: 1.62;
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0 0 26px;
+  }
+  .status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--ink-2);
+  }
+  .status b { color: var(--ink); font-weight: 600; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+
+  /* ---- sections ---- */
+  section { margin-bottom: 52px; scroll-margin-top: 28px; }
+  h2 {
+    font-size: 13px;
+    font-family: var(--mono);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 600;
+    margin: 0 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ---- scenario ---- */
+  .scenario {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .sc-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .sc-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .sc-title {
+    font-size: 18px;
+    font-weight: 640;
+    letter-spacing: -.014em;
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 220px;
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .chip.owner   { color: var(--role-owner-fg);   background: var(--role-owner-bg); }
+  .chip.trainer { color: var(--role-trainer-fg); background: var(--role-trainer-bg); }
+  .chip.member  { color: var(--role-member-fg);  background: var(--role-member-bg); }
+  .chip.admin   { color: var(--role-admin-fg);   background: var(--role-admin-bg); }
+  .sc-time {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .sc-body { padding: 18px 22px 22px; }
+  .goal {
+    margin: 0 0 18px;
+    color: var(--ink-2);
+    font-size: 14.5px;
+    max-width: 68ch;
+  }
+  .goal strong { color: var(--ink); font-weight: 600; }
+
+  /* ---- steps ---- */
+  ol.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.steps > li {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 4px 14px;
+    padding: 13px 0;
+    border-top: 1px solid var(--border);
+    align-items: start;
+  }
+  ol.steps > li:first-child { border-top: none; padding-top: 0; }
+  .n {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+    padding-top: 3px;
+  }
+  .do { font-size: 14.5px; }
+  .see {
+    font-size: 13.5px;
+    color: var(--ink-2);
+    padding-left: 14px;
+    border-left: 2px solid var(--accent-soft);
+  }
+  .see::before {
+    content: "Expect";
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: .87em;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .see code { background: transparent; border-color: transparent; padding: 1px 0; color: var(--ink); }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 13px 15px;
+    overflow-x: auto;
+    margin: 0 0 14px;
+  }
+  pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+  /* ---- callouts ---- */
+  .note {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px 15px;
+    border-radius: 5px;
+    font-size: 13.5px;
+    line-height: 1.58;
+    margin: 16px 0 0;
+    border: 1px solid;
+  }
+  .note .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding-top: 3px;
+    white-space: nowrap;
+  }
+  .note.warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--ink); }
+  .note.warn .tag { color: var(--warn); }
+  .note.crit { background: var(--crit-soft); border-color: var(--crit-line); color: var(--ink); }
+  .note.crit .tag { color: var(--crit); }
+  .note.info { background: var(--accent-soft); border-color: transparent; color: var(--ink); }
+  .note.info .tag { color: var(--accent-deep); }
+  .note p { margin: 0 0 8px; }
+  .note p:last-child { margin: 0; }
+
+  /* ---- setup card ---- */
+  .setup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .setup h3, .sc-body h4 {
+    font-size: 14px;
+    font-weight: 650;
+    margin: 0 0 10px;
+    letter-spacing: -.008em;
+  }
+  .setup h3 + p { margin-top: 0; }
+  .setup p { max-width: 70ch; color: var(--ink-2); }
+  .setup > *:last-child { margin-bottom: 0; }
+
+  /* ---- tables ---- */
+  .twrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 600;
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.m { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+  .pill {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .pill.ok   { color: var(--role-owner-fg); background: var(--role-owner-bg); }
+  .pill.warn { color: var(--warn); background: var(--warn-soft); }
+  .pill.crit { color: var(--crit); background: var(--crit-soft); }
+
+  ul.plain { margin: 0 0 14px; padding-left: 18px; color: var(--ink-2); max-width: 70ch; }
+  ul.plain li { margin-bottom: 5px; }
+  ul.plain strong { color: var(--ink); font-weight: 600; }
+
+  a { color: var(--accent-deep); }
+  a:focus-visible, .rail a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    line-height: 1.8;
+  }
+
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; gap: 32px; padding: 32px 20px 72px; }
+    .rail { position: static; }
+    .rail nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px 12px; }
+    ol.steps > li { grid-template-columns: 22px minmax(0, 1fr); }
+    .see { grid-column: 2; margin-top: 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-mark">GymOS</div>
+    <nav>
+      <a href="#setup"><span>00</span><span>Before you start</span></a>
+      <a href="#s1"><span>01</span><span>Configure the gym</span></a>
+      <a href="#s2"><span>02</span><span>Hire a trainer</span></a>
+      <a href="#s3"><span>03</span><span>Register a member</span></a>
+      <a href="#s4"><span>04</span><span>Request a session</span></a>
+      <a href="#s5"><span>05</span><span>Run the session</span></a>
+      <a href="#s6"><span>06</span><span>No-shows &amp; cancels</span></a>
+      <a href="#s7"><span>07</span><span>Follow the money</span></a>
+      <a href="#s8"><span>08</span><span>Coach the client</span></a>
+      <a href="#s9"><span>09</span><span>Analytics &amp; audit</span></a>
+      <a href="#s10"><span>10</span><span>Platform admin</span></a>
+      <a href="#s11"><span>11</span><span>Access controls</span></a>
+      <div class="rail-sep"></div>
+      <a href="#accounts"><span>—</span><span>Demo accounts</span></a>
+      <a href="#limits"><span>—</span><span>Known limits</span></a>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="masthead">
+      <p class="eyebrow">Phase 1 acceptance walkthrough</p>
+      <h1>GymOS Demo Runbook</h1>
+      <p class="standfirst">
+        Eleven scenarios that exercise every screen in the Phase&nbsp;1 build, in the order the
+        system actually depends on. Each step says what to do and what should happen. Work through
+        them start to finish — later scenarios rely on records the earlier ones create.
+      </p>
+      <div class="status-row">
+        <span class="status"><span class="dot"></span><b>32</b> routes building</span>
+        <span class="status"><span class="dot"></span><b>4</b> roles</span>
+        <span class="status"><span class="dot"></span>Pricing checks <b>14/14</b></span>
+        <span class="status"><span class="dot"></span>Seed gym <b>FitCore</b></span>
+      </div>
+    </div>
+
+    <section id="setup">
+      <h2>00 — Before you start</h2>
+      <div class="setup">
+        <h3>Reset to a known state</h3>
+        <p>
+          Reseeding wipes all gyms, users, sessions and financial records, then rebuilds the FitCore
+          demo gym. Set the password yourself so every demo account starts with the same one.
+        </p>
+        <pre><code>SEED_PASSWORD=DemoPass2026 npx prisma db seed
+npm run dev</code></pre>
+        <p>Then open <code>http://localhost:3000</code>.</p>
+
+        <div class="note warn">
+          <span class="tag">Do first</span>
+          <div>
+            <p><strong>Lower the minimum session duration before demoing.</strong> The default is 20 minutes, and a
+            trainer cannot finish a session until that much time has elapsed. Sign in as the owner, go to
+            <code>/owner/gym-config</code> → <strong>Policy</strong>, set <em>minimum session duration</em> to <code>1</code>, and save.</p>
+            <p>Without this, Scenario 05 stops at <em>"Minimum session duration (20 mins) not reached"</em>.</p>
+          </div>
+        </div>
+
+        <div class="note info">
+          <span class="tag">Note</span>
+          <div>Every seeded account is issued a temporary password, so the first sign-in for each one lands on
+          <code>/change-password</code> and nothing else is reachable until a new password is set. That is the intended
+          behaviour — pick something you will remember, per account.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s1">
+      <h2>01 — Configure the gym</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">01</span>
+          <h3 class="sc-title">Set the rate card, pay rates and policy</h3>
+          <span class="chip owner">Owner</span>
+          <span class="sc-time">~8 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            Everything downstream is priced from this screen. Set it first, then watch the numbers it
+            produces flow through bookings, payroll and the P&amp;L. <strong>Prices set here never re-price
+            anything already sold</strong> — that is the behaviour to look for in step 6.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">Sign in as <code>owner@fitgym.com</code>, set a new password, sign in again.</div>
+              <div class="see">The owner dashboard at <code>/owner</code>, with today's sessions and live stat tiles.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Go to <strong>Gym Config</strong> → <strong>Profile</strong>. Change the gym phone number and save.</div>
+              <div class="see">A green confirmation bar. The change is written to the audit log — you will find it in Scenario 09.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Open the <strong>Plans</strong> tab. Add a plan: <em>Quarterly Standard</em>, $129, 90 days.</div>
+              <div class="see">The plan appears in the list and becomes selectable when registering a member.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">Open the <strong>Session Fees</strong> tab. Set standard <code>50</code>, level&nbsp;2 <code>65</code>, introductory <code>0</code>. Save.</div>
+              <div class="see">"PT session rates updated. Packs and sessions already sold keep their original price."</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Open the <strong>Pay Rates</strong> tab. Confirm L1 <code>40%</code>, L2 <code>50%</code>, off-shift premium <code>10%</code>.</div>
+              <div class="see">These drive trainer earnings. A level&nbsp;2 trainer working outside their shift earns 60% of the fee.</div>
+            </li>
+            <li><span class="n">6</span>
+              <div class="do">Open <strong>Policy</strong>. Set the cancellation window to <code>24</code> hours and minimum duration to <code>1</code> minute.</div>
+              <div class="see">Saved. The 24-hour window decides what counts as a late cancellation in Scenario 06.</div>
+            </li>
+          </ol>
+          <div class="note info">
+            <span class="tag">Why it matters</span>
+            <div>Raise the standard fee to $80 and re-check an existing member's pack in Scenario 07 — the pack still
+            bills at its original per-session price. Price is snapshotted at the point of sale, so a rate change can
+            never rewrite history.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s2">
+      <h2>02 — Hire a trainer</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">02</span>
+          <h3 class="sc-title">Create a trainer account and set their shift</h3>
+          <span class="chip owner">Owner</span>
+          <span class="chip trainer">Trainer</span>
+          <span class="sc-time">~6 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            Trainers cannot self-register. The owner creates the account and hands over a
+            <strong>one-time password that is shown exactly once</strong> and never again.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">As owner, go to <strong>Trainers</strong> → <strong>Add trainer</strong>. Fill in a name, email, phone; pick <strong>Level 2</strong>; set the shift to <code>09:00</code>–<code>17:00</code>.</div>
+              <div class="see">A success panel showing the generated temporary password.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do"><strong>Copy the password now.</strong> Then reload the page.</div>
+              <div class="see">The password is gone. It is not stored in readable form anywhere — reissuing means creating a new account.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Open the new trainer from the list. Change their shift to <code>06:00</code>–<code>14:00</code> and approve it.</div>
+              <div class="see">Shift updated. Sessions booked outside these hours will be flagged off-shift and paid at the premium.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">In a private window, sign in as the new trainer with the temporary password.</div>
+              <div class="see">Forced straight to <code>/change-password</code>. Typing <code>/trainer/schedule</code> in the address bar bounces you back.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Set a new password.</div>
+              <div class="see">Signed out and returned to login — a credential change rotates the session by design. Sign in again to reach the schedule.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="s3">
+      <h2>03 — Register a member</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">03</span>
+          <h3 class="sc-title">Enrol a member and sell them a session pack</h3>
+          <span class="chip owner">Owner</span>
+          <span class="sc-time">~7 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            Two different money events. A membership is recognised as revenue immediately; a
+            <strong>session pack is not</strong> — it is money the gym owes back in sessions, and it only becomes
+            revenue as each session is used.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">As owner, go to <strong>Members</strong> → <strong>Add member</strong>. Register <em>Priya Fernando</em> on the <em>Quarterly Standard</em> plan you created in Scenario 01.</div>
+              <div class="see">A temporary password, shown once. Copy it.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Open <strong>Financials</strong> → revenue for this month.</div>
+              <div class="see">A new <code>MEMBERSHIP</code> line for $129, described as a new member registration.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Go back to Priya's profile and issue a session pack: <strong>10 sessions for $400</strong>, 90-day expiry.</div>
+              <div class="see">The pack appears on her profile with 10 of 10 remaining.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">Return to <strong>Financials</strong> and check the revenue list again.</div>
+              <div class="see"><strong>No $400 revenue line.</strong> That is correct — the cash arrived, but the gym has not earned it yet.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Open the <strong>Deferred revenue</strong> view.</div>
+              <div class="see">Priya's pack listed at $400 deferred, $0 recognised, 0% utilised. Her per-session price is $40.</div>
+            </li>
+          </ol>
+          <div class="note info">
+            <span class="tag">The rule</span>
+            <div>At any moment, <strong>deferred + recognised = what the member paid</strong>. Keep this page open through
+            Scenarios 05 and 06 and watch the two columns trade places without the total ever changing.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s4">
+      <h2>04 — Request a session</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">04</span>
+          <h3 class="sc-title">Member requests, trainer accepts</h3>
+          <span class="chip member">Member</span>
+          <span class="chip trainer">Trainer</span>
+          <span class="sc-time">~8 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            There is no separate "hire" step. <strong>Booking is the hire mechanism</strong> — accepting a request
+            is what makes someone your client and unlocks their profile and plans.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">In a private window, sign in as Priya with her temporary password and set a new one.</div>
+              <div class="see">Lands on <code>/member/trainers</code> — the member's home is the trainer directory.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Pick a trainer and choose <strong>Request session</strong>. Book a time <strong>3 days out</strong>, in person, 60 minutes. Add a goal in the notes.</div>
+              <div class="see">Request submitted. The form shows her remaining pack credits before she commits.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Try requesting a second session with the same trainer at the same time.</div>
+              <div class="see">Refused — overlapping requests with one trainer are blocked.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">Try requesting a time in the past.</div>
+              <div class="see">"Cannot request a session in the past."</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Sign in as that trainer. Check the bell icon in the header.</div>
+              <div class="see">An unread notification: a new session request from Priya. Clicking it opens the schedule.</div>
+            </li>
+            <li><span class="n">6</span>
+              <div class="do">On <code>/trainer/schedule</code>, find the pending request and <strong>Accept</strong> it.</div>
+              <div class="see">Status moves <code>PENDING_CONFIRMATION</code> → <code>SCHEDULED</code>. Priya gets a confirmation notification.</div>
+            </li>
+            <li><span class="n">7</span>
+              <div class="do">Open <strong>Clients</strong> in the trainer's sidebar.</div>
+              <div class="see">Priya is now listed. Before the acceptance she was not — a pending request does not grant access to her profile.</div>
+            </li>
+          </ol>
+          <div class="note warn">
+            <span class="tag">Try this</span>
+            <div>Sign in as <code>member3@fitgym.com</code> (Robert Taylor), who has no session pack, and try to request a
+            session. It is refused: <em>"No sessions remaining — purchase a pack."</em> A member cannot book training
+            they have not paid for.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s5">
+      <h2>05 — Run the session</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">05</span>
+          <h3 class="sc-title">Start and complete a session, and watch the money move</h3>
+          <span class="chip trainer">Trainer</span>
+          <span class="chip owner">Owner</span>
+          <span class="sc-time">~7 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            Completing a session does three things at once, and either all of them happen or none do:
+            <strong>a pack credit is spent, revenue is recognised, and the trainer is owed their share.</strong>
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">As the trainer, on <code>/trainer/schedule</code>, press <strong>Start session</strong> on Priya's booking.</div>
+              <div class="see">Status becomes <code>ACTIVE</code> and a start time is stamped.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Wait past the minimum duration you set in Scenario 01, then press <strong>End session</strong>.</div>
+              <div class="see">Status <code>COMPLETED</code>. If you skipped the setup step, you get the minimum-duration refusal instead.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Open <strong>Earnings</strong> in the trainer's sidebar.</div>
+              <div class="see">A pay line for this session. On a $40 pack session, a level&nbsp;1 in-shift trainer earns <strong>$16</strong>; a level&nbsp;2 trainer off-shift earns <strong>$24</strong>.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">As owner, reopen <strong>Financials</strong> → deferred revenue.</div>
+              <div class="see">Priya's pack now reads 9 remaining, <strong>$40 recognised, $360 deferred</strong>. The total is still $400.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Check the revenue list for this month.</div>
+              <div class="see">A <code>PT_SESSION</code> line for $40 — priced from her pack, not from the $50 rate card.</div>
+            </li>
+          </ol>
+          <div class="note info">
+            <span class="tag">Why $40</span>
+            <div>Priya paid $400 for 10 sessions, so each is worth $40 whatever the list price says and whichever
+            trainer takes it. The trainer is paid a share of what the gym actually collected, not of a price the
+            member never paid.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="s6">
+      <h2>06 — No-shows and cancellations</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">06</span>
+          <h3 class="sc-title">The three ways a session ends without being trained</h3>
+          <span class="chip trainer">Trainer</span>
+          <span class="chip member">Member</span>
+          <span class="sc-time">~10 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            The distinction that matters commercially: <strong>an on-time cancellation costs the member nothing;
+            a late one costs them the session.</strong> In both no-show and late-cancel cases the gym keeps the
+            money but the trainer is not paid.
+          </p>
+          <h4>A — No-show</h4>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">As owner, book a session for Priya <strong>tomorrow</strong> via <strong>Sessions</strong> → <strong>Book session</strong>.</div>
+              <div class="see">Created directly as <code>SCHEDULED</code> — a staff booking skips the trainer's confirmation.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">As the trainer, press <strong>No-show</strong> on it.</div>
+              <div class="see">Status <code>MISSED</code>. Pack drops to 8. Revenue gains $40. <strong>No pay line for the trainer.</strong></div>
+            </li>
+          </ol>
+          <h4 style="margin-top:20px">B — Late cancellation</h4>
+          <ol class="steps">
+            <li><span class="n">3</span>
+              <div class="do">Book Priya another session, this time <strong>2 hours from now</strong> — inside the 24-hour window.</div>
+              <div class="see">Scheduled.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">As Priya, go to <strong>My Sessions</strong> and cancel it.</div>
+              <div class="see">Cancelled, and flagged as late. Pack drops to 7, revenue gains $40, trainer paid nothing.</div>
+            </li>
+          </ol>
+          <h4 style="margin-top:20px">C — On-time cancellation</h4>
+          <ol class="steps">
+            <li><span class="n">5</span>
+              <div class="do">Book one more session <strong>5 days out</strong>, then cancel it as Priya.</div>
+              <div class="see">Cancelled with <strong>no deduction</strong>. Pack stays at 7 and no revenue is recognised.</div>
+            </li>
+            <li><span class="n">6</span>
+              <div class="do">Reopen the deferred revenue view and add the two columns together.</div>
+              <div class="see">3 credits spent, 7 remaining. <strong>$120 recognised + $280 deferred = $400.</strong> The total has not moved all demo.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="s7">
+      <h2>07 — Follow the money</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">07</span>
+          <h3 class="sc-title">Expenses, budgets, payroll and the P&amp;L</h3>
+          <span class="chip owner">Owner</span>
+          <span class="sc-time">~12 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            The financials screen is the reason the gym buys this. Everything on it is derived from the
+            actions in the previous scenarios — nothing here is typed in twice.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">Open <strong>Financials</strong>. Review the revenue overview for the current month.</div>
+              <div class="see">Split across membership, PT sessions and add-ons, with the seeded records plus everything you generated.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Record a manual payment: pick a member, <code>$45</code>, category <strong>Add-on</strong>, description "Protein &amp; shaker".</div>
+              <div class="see">An <code>ADD_ON</code> revenue line appears immediately in the overview.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Add an expense: <code>$220</code>, <strong>Maintenance</strong>, dated today, "Rowing machine repair".</div>
+              <div class="see">Listed under expenses and counted against the maintenance budget.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">Open <strong>Budget vs actual</strong>.</div>
+              <div class="see">Marketing is already over budget in the seed data — $650 spent against $500. Maintenance has moved with your new expense.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Open the <strong>Payroll</strong> view for the open pay period.</div>
+              <div class="see">Per-trainer totals with session counts split in-shift and off-shift, including the session you completed in Scenario 05.</div>
+            </li>
+            <li><span class="n">6</span>
+              <div class="do"><strong>Close</strong> the pay period, then <strong>approve</strong> it.</div>
+              <div class="see">Status moves <code>OPEN</code> → <code>CLOSED</code> → <code>APPROVED</code>. Both transitions are written to the audit log.</div>
+            </li>
+            <li><span class="n">7</span>
+              <div class="do">Generate the <strong>P&amp;L</strong> for this month.</div>
+              <div class="see">Revenue by category, expenses by category, and net profit. Compare it against the tiles at the top of the page.</div>
+            </li>
+            <li><span class="n">8</span>
+              <div class="do">Export both CSVs: <code>/api/export/csv?type=financials</code> and <code>?type=payroll</code>. Open them in Excel.</div>
+              <div class="see">Correct columns, accented characters intact, and any name beginning with <code>=</code> treated as text rather than a formula.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="s8">
+      <h2>08 — Coach the client</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">08</span>
+          <h3 class="sc-title">Client profile, workout plan, meal plan</h3>
+          <span class="chip trainer">Trainer</span>
+          <span class="sc-time">~9 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            A trainer sees only the members they have actually trained. Plans are written against that
+            relationship, so there is no way to author a plan for someone else's client.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">As the trainer, open <strong>Clients</strong> and then Priya's profile.</div>
+              <div class="see">The client view: session history, plans, and the health notes captured at registration.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Create a workout plan — name it, add 4–5 exercises with sets, reps and weights.</div>
+              <div class="see">Saved and listed on her profile.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Create a meal plan with entries across several days and meal types.</div>
+              <div class="see">Saved, with calories and macros per entry.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">Sign in as the <em>other</em> seeded trainer and open their client list.</div>
+              <div class="see">Priya is absent. Her profile and plans are not reachable from this account.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Back on the first trainer's schedule, add session notes to the completed session.</div>
+              <div class="see">Notes saved against that session and visible on the client profile.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="s9">
+      <h2>09 — Analytics and audit</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">09</span>
+          <h3 class="sc-title">Utilisation, growth, and the record of who did what</h3>
+          <span class="chip owner">Owner</span>
+          <span class="sc-time">~6 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            The audit log is the compliance story: every consequential action taken in the previous
+            eight scenarios should be sitting in it, attributed to the account that took it.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">Open <strong>Analytics</strong>. Read the trainer utilisation chart.</div>
+              <div class="see">Each trainer measured against <em>their own</em> shift length, so a part-timer is not scored as permanently idle.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Review peak hours and the six-month member growth chart.</div>
+              <div class="see">Growth shows the members you registered this month. See the note under Known limits about the peak-hours figures.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Open <strong>Audit Log</strong>.</div>
+              <div class="see">Your gym profile edit, the trainer and member you created, the pack you issued, the accepted request, the completed session, and both payroll transitions.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">Filter by action type — try <code>SESSION_CANCELLED</code>.</div>
+              <div class="see">The no-show and both cancellations, each recording whether a credit was deducted and how much revenue was recognised.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Page through the log using the pagination controls.</div>
+              <div class="see">Stable ordering, newest first.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="s10">
+      <h2>10 — Platform admin</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">10</span>
+          <h3 class="sc-title">Support access across gyms</h3>
+          <span class="chip admin">Super admin</span>
+          <span class="sc-time">~4 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            The platform operator can step into a gym to support it — but only one gym at a time, and
+            only the one they explicitly selected.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">Sign in as <code>admin@gymos.com</code>.</div>
+              <div class="see"><code>/admin</code> — every gym on the platform, with owner, member count and session count.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Select FitCore to act within it, then open <strong>Owner View</strong>.</div>
+              <div class="see">The full owner dashboard, scoped to FitCore's data.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Clear the selection from <code>/admin</code> and try <code>/owner/financials</code> again.</div>
+              <div class="see">"Select a gym before performing this action." No gym chosen means no gym's data.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="s11">
+      <h2>11 — Access controls</h2>
+      <div class="scenario">
+        <div class="sc-head">
+          <span class="sc-num">11</span>
+          <h3 class="sc-title">What happens when someone tries something they shouldn't</h3>
+          <span class="chip owner">Owner</span>
+          <span class="chip trainer">Trainer</span>
+          <span class="chip member">Member</span>
+          <span class="sc-time">~7 min</span>
+        </div>
+        <div class="sc-body">
+          <p class="goal">
+            Worth demonstrating explicitly — these are the behaviours a gym owner will be asked about
+            when they hand accounts to staff.
+          </p>
+          <ol class="steps">
+            <li><span class="n">1</span>
+              <div class="do">Signed in as a trainer, type <code>/owner/financials</code> into the address bar.</div>
+              <div class="see">Redirected to the trainer dashboard. Same for a member trying <code>/trainer/clients</code>.</div>
+            </li>
+            <li><span class="n">2</span>
+              <div class="do">Sign out entirely and request <code>/owner/members</code>.</div>
+              <div class="see">Sent to login, with a return path so you land back where you were aiming after signing in.</div>
+            </li>
+            <li><span class="n">3</span>
+              <div class="do">Try to sign in as <code>member5@fitgym.com</code> (Michael Brown, suspended) with the correct password.</div>
+              <div class="see">Refused with an account-inactive message — the password is right, the account is barred.</div>
+            </li>
+            <li><span class="n">4</span>
+              <div class="do">As owner, suspend an active member while they are signed in elsewhere. Have them click around.</div>
+              <div class="see">Their session stops working within about five minutes. Suspension does not wait for the token to expire.</div>
+            </li>
+            <li><span class="n">5</span>
+              <div class="do">Enter a wrong password six times in a row for one account.</div>
+              <div class="see">Throttled after five attempts, with a clear message rather than a generic failure. A correct sign-in resets the counter.</div>
+            </li>
+            <li><span class="n">6</span>
+              <div class="do">Leave a session idle for 12 hours, or check the cookie expiry.</div>
+              <div class="see">Sessions last a working day, not a month.</div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="accounts">
+      <h2>Demo accounts</h2>
+      <div class="twrap">
+        <table>
+          <thead>
+            <tr><th>Email</th><th>Role</th><th>Name</th><th>State</th><th>Pack</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="m">admin@gymos.com</td><td>Super admin</td><td>Super Admin</td><td><span class="pill ok">Active</span></td><td>—</td></tr>
+            <tr><td class="m">owner@fitgym.com</td><td>Owner</td><td>Alex Rivera</td><td><span class="pill ok">Active</span></td><td>—</td></tr>
+            <tr><td class="m">trainer1@fitgym.com</td><td>Trainer</td><td>Marcus Vance — L1, 08:00–16:00</td><td><span class="pill ok">Active</span></td><td>—</td></tr>
+            <tr><td class="m">trainer2@fitgym.com</td><td>Trainer</td><td>Sarah Jenkins — L2, 10:00–18:00</td><td><span class="pill ok">Active</span></td><td>—</td></tr>
+            <tr><td class="m">member1@fitgym.com</td><td>Member</td><td>John Doe</td><td><span class="pill ok">Active</span></td><td>8 of 10 left, $450</td></tr>
+            <tr><td class="m">member2@fitgym.com</td><td>Member</td><td>Jane Smith</td><td><span class="pill ok">Active</span></td><td>4 of 5 left, $250</td></tr>
+            <tr><td class="m">member3@fitgym.com</td><td>Member</td><td>Robert Taylor</td><td><span class="pill ok">Active</span></td><td><span class="pill warn">None</span></td></tr>
+            <tr><td class="m">member4@fitgym.com</td><td>Member</td><td>Emily Clark</td><td><span class="pill warn">Expired</span></td><td>—</td></tr>
+            <tr><td class="m">member5@fitgym.com</td><td>Member</td><td>Michael Brown</td><td><span class="pill crit">Suspended</span></td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:12px;color:var(--ink-2);font-size:13.5px;max-width:70ch">
+        All accounts share the <code>SEED_PASSWORD</code> you set, and every one of them must choose a new
+        password on first sign-in.
+      </p>
+    </section>
+
+    <section id="limits">
+      <h2>Known limits in this build</h2>
+      <div class="setup">
+        <p style="margin-top:0">Flagging these up front so nothing in the demo is mistaken for finished work.</p>
+        <ul class="plain">
+          <li><strong>Subscription &amp; Billing is a mock-up.</strong> The plan, status and card number on
+            <code>/owner/subscription</code> are placeholders generated on first view, not a real subscription. Both
+            buttons are stubs. Treat the page as a design preview only.</li>
+          <li><strong>The two policy checkboxes have no effect yet.</strong> "Deduct on no-show" and "deduct on late
+            cancel" save, but the system deducts a credit either way. The cancellation <em>window</em> and
+            <em>minimum duration</em> on the same tab do work.</li>
+          <li><strong>Peak-hours figures read as counts, not averages,</strong> when the sample is small. With demo-sized
+            data the chart shows the raw number of sessions in each hour.</li>
+          <li><strong>"Members in Gym" on the owner dashboard counts sessions in progress,</strong> not people in the
+            building — there is no check-in feature to derive a headcount from.</li>
+          <li><strong>Receipts are placeholders.</strong> The receipt buttons on a member profile pop up a summary; real
+            receipts arrive with the payment ledger.</li>
+          <li><strong>Session times follow the server's clock.</strong> On a local machine this is correct. On a hosted
+            deployment the server runs on UTC, which shifts displayed times until the gym's timezone is configured —
+            fix this before running the demo on a hosted URL.</li>
+          <li><strong>Temporary passwords are shown once and are not recoverable.</strong> There is no password-reset
+            email in Phase 1; an owner who loses one recreates the account.</li>
+          <li><strong>No email or SMS.</strong> Notifications appear in the in-app bell only.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      GymOS Phase 1 · Walkthrough prepared 18 August 2026<br />
+      Seed gym: FitCore Fitness Center · 4 roles · 32 routes<br />
+      Engineering notes: docs/upgrade-backlog.md · Accounting rules: docs/revenue-model.md
+    </footer>
+  </main>
+</div>
