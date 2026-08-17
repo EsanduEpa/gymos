@@ -278,9 +278,12 @@ export function RecordDeskPaymentDialog({
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#007A35] outline-none text-sm"
             >
               <option value="MEMBERSHIP">Membership Fee</option>
-              <option value="SESSION_PACK">PT Session Pack</option>
               <option value="ADD_ON">Add-on / Retail Goods</option>
             </select>
+            <p className="text-xs text-gray-500 mt-1.5">
+              Selling a PT session pack? Issue it from the member&apos;s profile instead —
+              that records the sale and gives them the sessions.
+            </p>
           </div>
 
           <div>

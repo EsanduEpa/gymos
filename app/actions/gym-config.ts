@@ -146,6 +146,70 @@ export async function updateTrainerPayRates(formData: FormData) {
   }
 }
 
+const rateCardSchema = z.object({
+  defaultSessionFee: z.coerce.number().min(0, "Standard rate cannot be negative"),
+  level2SessionFee: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
+  introSessionFee: z.union([z.coerce.number().min(0), z.literal("")]).optional(),
+})
+
+/**
+ * The gym's PT session rate card.
+ *
+ * Editing these prices never re-prices a session already booked or a pack
+ * already sold — both snapshot their price at the time of sale. See
+ * docs/revenue-model.md.
+ */
+export async function updateSessionRates(formData: FormData) {
+  const auth = await authorize(CONFIG_ROLES)
+  if (!auth.ok) return { error: auth.error }
+  const { gymId } = auth
+
+  const optional = (key: string) => {
+    const raw = formData.get(key)
+    return raw === null || String(raw).trim() === "" ? "" : raw
+  }
+
+  const validated = rateCardSchema.safeParse({
+    defaultSessionFee: formData.get("defaultSessionFee"),
+    level2SessionFee: optional("level2SessionFee"),
+    introSessionFee: optional("introSessionFee"),
+  })
+
+  if (!validated.success) {
+    return { error: validated.error.errors[0].message }
+  }
+
+  const { defaultSessionFee, level2SessionFee, introSessionFee } = validated.data
+
+  try {
+    await prisma.gym.update({
+      where: { id: gymId },
+      data: {
+        defaultSessionFee,
+        // Blank clears the override, falling back to the standard rate.
+        level2SessionFee: level2SessionFee === "" || level2SessionFee === undefined ? null : level2SessionFee,
+        introSessionFee: introSessionFee === "" || introSessionFee === undefined ? null : introSessionFee,
+      },
+    })
+
+    await logAudit({
+      userId: auth.userId,
+      gymId,
+      actionType: "PAY_RATES_UPDATED",
+      affectedRecordId: gymId,
+      details: {
+        message: `Updated PT session rates: standard $${defaultSessionFee}, level 2 ${level2SessionFee === "" || level2SessionFee === undefined ? "—" : `$${level2SessionFee}`}, introductory ${introSessionFee === "" || introSessionFee === undefined ? "—" : `$${introSessionFee}`}`,
+      },
+    })
+
+    revalidatePath("/owner/gym-config")
+    return { success: true }
+  } catch (err) {
+    console.error("Failed to update session rates:", err)
+    return { error: "Failed to update PT session rates" }
+  }
+}
+
 export async function updateCancellationPolicy(formData: FormData) {
   const auth = await authorize(CONFIG_ROLES)
   if (!auth.ok) return { error: auth.error }

@@ -24,10 +24,14 @@ const budgetSchema = z.object({
   month: z.string().optional(),
 })
 
+// SESSION_PACK deliberately absent. A pack is deferred revenue recognised one
+// session at a time (docs/revenue-model.md), so booking its full price here as
+// PT_SESSION revenue counted the same money twice. Pack sales go through
+// issueSessionPack, which provisions the sessions the member paid for.
 const manualPaymentSchema = z.object({
   memberId: z.string().min(1, "Member is required"),
   amount: z.coerce.number().positive("Amount must be positive"),
-  type: z.enum(["MEMBERSHIP", "SESSION_PACK", "ADD_ON"]),
+  type: z.enum(["MEMBERSHIP", "ADD_ON"]),
   description: z.string().optional(),
 })
 
@@ -551,9 +555,8 @@ export async function recordManualPayment(formData: FormData) {
   const member = await findUserInGym(gymId, memberId, Role.GYM_MEMBER)
   if (!member) return { error: "Member not found at your gym." }
 
-  let category: RevenueCategory = RevenueCategory.ADD_ON
-  if (type === "MEMBERSHIP") category = RevenueCategory.MEMBERSHIP
-  else if (type === "SESSION_PACK") category = RevenueCategory.PT_SESSION
+  const category: RevenueCategory =
+    type === "MEMBERSHIP" ? RevenueCategory.MEMBERSHIP : RevenueCategory.ADD_ON
 
   try {
     await prisma.revenueRecord.create({

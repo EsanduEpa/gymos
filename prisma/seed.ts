@@ -221,18 +221,45 @@ async function main() {
 
   // 8. Create PT Sessions establishing trainer-client relationships directly
   // (the request -> accept/decline flow on PTSession is now the hire mechanism)
+  //
+  // Consumed credits and completed sessions must line up, or the financials
+  // page contradicts itself on day one. John's pack is $450/10 = $45 a session
+  // with 2 consumed; Jane's is $250/5 = $50 with 1 consumed. See
+  // docs/revenue-model.md.
+  const johnSessionFee = 450 / 10
+  const janeSessionFee = 250 / 5
+
+  for (const daysAgo of [3, 6]) {
+    await prisma.pTSession.create({
+      data: {
+        gymId: gym.id,
+        clientId: createdMembers[0].id,
+        trainerId: trainer1.id,
+        scheduledAt: new Date(Date.now() - daysAgo * 86400000),
+        duration: 60,
+        status: "COMPLETED",
+        fee: johnSessionFee,
+        shiftStatus: "IN_SHIFT",
+        notes: "Goal: Build upper body muscle strength",
+        startedAt: new Date(Date.now() - daysAgo * 86400000),
+        endedAt: new Date(Date.now() - daysAgo * 86400000 + 60 * 60000),
+      },
+    })
+  }
+
   await prisma.pTSession.create({
     data: {
       gymId: gym.id,
-      clientId: createdMembers[0].id,
-      trainerId: trainer1.id,
-      scheduledAt: new Date(Date.now() - 3 * 86400000),
+      clientId: createdMembers[1].id,
+      trainerId: trainer2.id,
+      scheduledAt: new Date(Date.now() - 4 * 86400000),
       duration: 60,
       status: "COMPLETED",
-      fee: 45.0,
-      notes: "Goal: Build upper body muscle strength",
-      startedAt: new Date(Date.now() - 3 * 86400000),
-      endedAt: new Date(Date.now() - 3 * 86400000 + 60 * 60000),
+      fee: janeSessionFee,
+      shiftStatus: "IN_SHIFT",
+      notes: "Goal: Post-rehab mobility and weight loss",
+      startedAt: new Date(Date.now() - 4 * 86400000),
+      endedAt: new Date(Date.now() - 4 * 86400000 + 60 * 60000),
     },
   })
 
@@ -244,7 +271,7 @@ async function main() {
       scheduledAt: new Date(Date.now() + 2 * 86400000),
       duration: 60,
       status: "SCHEDULED",
-      fee: 50.0,
+      fee: janeSessionFee,
       notes: "Goal: Post-rehab mobility and weight loss",
     },
   })
@@ -283,19 +310,29 @@ async function main() {
         date: new Date(Date.now() - 10 * 86400000),
         description: "Annual Premium Membership - Jane Smith",
       },
+      // A pack sale is deferred revenue, not revenue. One record per credit
+      // actually consumed, priced from the pack. Booking the full pack price
+      // here counted the same money twice.
       {
         gymId: gym.id,
-        amount: 450.0,
+        amount: johnSessionFee,
         category: "PT_SESSION",
-        date: new Date(Date.now() - 8 * 86400000),
-        description: "10 PT Session Pack - John Doe",
+        date: new Date(Date.now() - 6 * 86400000),
+        description: "PT session completed - John Doe with Marcus Chen",
       },
       {
         gymId: gym.id,
-        amount: 250.0,
+        amount: johnSessionFee,
         category: "PT_SESSION",
-        date: new Date(Date.now() - 5 * 86400000),
-        description: "5 PT Session Pack - Jane Smith",
+        date: new Date(Date.now() - 3 * 86400000),
+        description: "PT session completed - John Doe with Marcus Chen",
+      },
+      {
+        gymId: gym.id,
+        amount: janeSessionFee,
+        category: "PT_SESSION",
+        date: new Date(Date.now() - 4 * 86400000),
+        description: "PT session completed - Jane Smith with Sophia Perera",
       },
       {
         gymId: gym.id,
@@ -401,21 +438,25 @@ async function main() {
     },
   })
 
-  await prisma.payRecord.create({
-    data: {
-      trainerId: trainer1.id,
-      payPeriodId: payPeriod.id,
-      amount: 20.0,
-      description: "PT Session completion pay (40% Level 1 base rate)",
-    },
-  })
+  // Trainer pay is a share of the fee actually charged, so it follows the pack
+  // price rather than a list price the member never paid.
+  for (let i = 0; i < 2; i++) {
+    await prisma.payRecord.create({
+      data: {
+        trainerId: trainer1.id,
+        payPeriodId: payPeriod.id,
+        amount: johnSessionFee * gym.level1BaseRate,
+        description: `PT session completion pay (${(gym.level1BaseRate * 100).toFixed(0)}% of $${johnSessionFee.toFixed(2)})`,
+      },
+    })
+  }
 
   await prisma.payRecord.create({
     data: {
       trainerId: trainer2.id,
       payPeriodId: payPeriod.id,
-      amount: 25.0,
-      description: "PT Session completion pay (50% Level 2 base rate)",
+      amount: janeSessionFee * gym.level2BaseRate,
+      description: `PT session completion pay (${(gym.level2BaseRate * 100).toFixed(0)}% of $${janeSessionFee.toFixed(2)})`,
     },
   })
 

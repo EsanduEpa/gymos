@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Gym" ADD COLUMN     "defaultSessionFee" DOUBLE PRECISION NOT NULL DEFAULT 50,
+ADD COLUMN     "introSessionFee" DOUBLE PRECISION,
+ADD COLUMN     "level2SessionFee" DOUBLE PRECISION;
+
+-- AlterTable
+ALTER TABLE "PTSession" ALTER COLUMN "fee" DROP DEFAULT;

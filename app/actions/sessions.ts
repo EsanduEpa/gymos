@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { createNotification } from "@/lib/notifications"
 import { authorize } from "@/lib/authz"
-import { Role, SessionStatus, SessionType, ShiftStatus } from "@prisma/client"
+import { resolveSessionFee, round2, trainerPayFor } from "@/lib/pricing"
+import { Role, SessionStatus, SessionType, ShiftStatus, TrainerLevel } from "@prisma/client"
 import { Prisma } from "@prisma/client"
 import { RevenueCategory } from "@prisma/client"
 import { revalidatePath } from "next/cache"
@@ -97,6 +98,70 @@ function computeShiftStatus(time: string, shiftStart?: string | null, shiftEnd?:
   return time < shiftStart || time > shiftEnd ? "OFF_SHIFT" : "IN_SHIFT"
 }
 
+// Price is snapshotted onto the session at booking so later rate-card edits
+// never re-price a booked session. See docs/revenue-model.md.
+async function resolveFeeForBooking(
+  gymId: string,
+  opts: {
+    type: SessionType
+    trainerLevel: TrainerLevel | null
+    pack: { price: number | null; totalSessions: number } | null
+  }
+) {
+  const gym = await prisma.gym.findUnique({
+    where: { id: gymId },
+    select: { defaultSessionFee: true, level2SessionFee: true, introSessionFee: true },
+  })
+  if (!gym) throw new Error("Gym not found while pricing session")
+  return round2(resolveSessionFee(gym, opts))
+}
+
+/**
+ * Consuming a pack credit and recognizing the revenue it was holding.
+ *
+ * Completion, no-show and late cancellation all land here: in every one the
+ * member has spent the credit and the gym keeps the money. Doing the two
+ * together in one transaction is what keeps `deferred + recognized` equal to
+ * what the member paid — previously a no-show burned the credit and recorded
+ * no revenue, so the money simply left the books.
+ */
+async function consumePackCredit(
+  tx: Prisma.TransactionClient,
+  ptSession: { id: string; gymId: string; clientId: string; fee: number },
+  reason: string
+) {
+  const activePack = await tx.sessionPack.findFirst({
+    where: {
+      userId: ptSession.clientId,
+      status: "ACTIVE",
+      remainingSessions: { gt: 0 },
+    },
+    orderBy: { expiryDate: "asc" },
+  })
+
+  if (activePack) {
+    const newRemaining = activePack.remainingSessions - 1
+    await tx.sessionPack.update({
+      where: { id: activePack.id },
+      data: {
+        remainingSessions: newRemaining,
+        status: newRemaining === 0 ? "EXHAUSTED" : "ACTIVE",
+      },
+    })
+  }
+
+  await tx.revenueRecord.create({
+    data: {
+      gymId: ptSession.gymId,
+      amount: ptSession.fee,
+      category: RevenueCategory.PT_SESSION,
+      description: reason,
+    },
+  })
+
+  return activePack
+}
+
 const bookSessionSchema = z.object({
   clientId: z.string().min(1, "Member is required"),
   trainerId: z.string().min(1, "Trainer is required"),
@@ -145,6 +210,7 @@ export async function bookSession(formData: FormData) {
   // BR-018: Validate member session pack balance
   const activePack = await prisma.sessionPack.findFirst({
     where: { userId: clientId, status: "ACTIVE", remainingSessions: { gt: 0 } },
+    orderBy: { expiryDate: "asc" },
   })
   if (!activePack) {
     return { error: "No sessions remaining - purchase a pack (BR-018)" }
@@ -156,6 +222,11 @@ export async function bookSession(formData: FormData) {
   }
 
   const shiftStatus = computeShiftStatus(time, trainer.shiftStart, trainer.shiftEnd)
+  const fee = await resolveFeeForBooking(gymId, {
+    type: type as SessionType,
+    trainerLevel: trainer.trainerLevel,
+    pack: activePack,
+  })
 
   try {
     const ptSession = await prisma.pTSession.create({
@@ -169,7 +240,7 @@ export async function bookSession(formData: FormData) {
         status: SessionStatus.SCHEDULED,
         shiftStatus,
         notes,
-        fee: 50.0,
+        fee,
       },
     })
 
@@ -237,6 +308,7 @@ export async function requestSession(formData: FormData) {
   // BR-018: Validate member session pack balance
   const activePack = await prisma.sessionPack.findFirst({
     where: { userId: clientId, status: "ACTIVE", remainingSessions: { gt: 0 } },
+    orderBy: { expiryDate: "asc" },
   })
   if (!activePack) {
     return { error: "No sessions remaining - purchase a pack (BR-018)" }
@@ -254,6 +326,11 @@ export async function requestSession(formData: FormData) {
   }
 
   const shiftStatus = computeShiftStatus(time, trainer.shiftStart, trainer.shiftEnd)
+  const fee = await resolveFeeForBooking(gymId, {
+    type: type as SessionType,
+    trainerLevel: trainer.trainerLevel,
+    pack: activePack,
+  })
 
   try {
     const ptSession = await prisma.pTSession.create({
@@ -267,7 +344,7 @@ export async function requestSession(formData: FormData) {
         status: SessionStatus.PENDING_CONFIRMATION,
         shiftStatus,
         notes,
-        fee: 50.0,
+        fee,
       },
     })
 
@@ -457,80 +534,64 @@ export async function endSession(sessionId: string) {
     return { error: `Minimum session duration (${minDuration} mins) not reached (BR-010)` }
   }
 
+  const gym = ptSession.gym
+
   try {
-    // 1. Mark COMPLETED
-    await prisma.pTSession.update({
-      where: { id: sessionId },
-      data: {
-        status: SessionStatus.COMPLETED,
-        endedAt: new Date(),
-      },
-    })
-
-    // 2. BR-011: Deduct 1 session from Member Session Pack (oldest-expiring pack first)
-    const activePack = await prisma.sessionPack.findFirst({
-      where: {
-        userId: ptSession.clientId,
-        status: "ACTIVE",
-        remainingSessions: { gt: 0 },
-      },
-      orderBy: { expiryDate: "asc" },
-    })
-
-    if (activePack) {
-      const newRemaining = activePack.remainingSessions - 1
-      await prisma.sessionPack.update({
-        where: { id: activePack.id },
+    // Completing a session moves money in three places: the pack loses a
+    // credit, revenue is recognized, and the trainer is owed. All of it in one
+    // transaction — a partial failure used to leave a completed session with a
+    // burned credit, no revenue and an unpaid trainer, with nothing to show it.
+    const trainerPay = await prisma.$transaction(async (tx) => {
+      await tx.pTSession.update({
+        where: { id: sessionId },
         data: {
-          remainingSessions: newRemaining,
-          status: newRemaining === 0 ? "EXHAUSTED" : "ACTIVE",
+          status: SessionStatus.COMPLETED,
+          endedAt: new Date(),
         },
       })
-    }
 
-    // 3. Create Revenue Record
-    await prisma.revenueRecord.create({
-      data: {
-        gymId: ptSession.gymId,
-        amount: ptSession.fee,
-        category: RevenueCategory.PT_SESSION,
-        description: `PT Session fee for client ${ptSession.client.fullName}`,
-      },
-    })
+      // BR-011: consume a credit and recognize what it was holding.
+      await consumePackCredit(
+        tx,
+        ptSession,
+        `PT session completed — ${ptSession.client.fullName} with ${ptSession.trainer.fullName}`
+      )
 
-    // 4. BR-041 to BR-048: Calculate Trainer Pay
-    const gym = ptSession.gym
-    const trainerLevel = ptSession.trainer.trainerLevel
-    const isLevel2 = trainerLevel === "LEVEL_2"
-    const baseRate = isLevel2 ? gym.level2BaseRate : gym.level1BaseRate
-    const offShiftBonus = ptSession.shiftStatus === "OFF_SHIFT" ? gym.offShiftPremium : 0
-    const totalPayRate = baseRate + offShiftBonus
-    const trainerPayAmount = ptSession.fee * totalPayRate
+      // BR-041 to BR-048: trainer earns a share of the fee actually charged.
+      const pay = trainerPayFor(ptSession.fee, {
+        trainerLevel: ptSession.trainer.trainerLevel,
+        offShift: ptSession.shiftStatus === "OFF_SHIFT",
+        level1BaseRate: gym.level1BaseRate,
+        level2BaseRate: gym.level2BaseRate,
+        offShiftPremium: gym.offShiftPremium,
+      })
 
-    // Get open PayPeriod
-    let openPeriod = await prisma.payPeriod.findFirst({
-      where: { gymId: ptSession.gymId, status: "OPEN" },
-    })
+      let openPeriod = await tx.payPeriod.findFirst({
+        where: { gymId: ptSession.gymId, status: "OPEN" },
+      })
 
-    if (!openPeriod) {
-      openPeriod = await prisma.payPeriod.create({
+      if (!openPeriod) {
+        openPeriod = await tx.payPeriod.create({
+          data: {
+            gymId: ptSession.gymId,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 30 * 86400000),
+            status: "OPEN",
+          },
+        })
+      }
+
+      await tx.payRecord.create({
         data: {
-          gymId: ptSession.gymId,
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 30 * 86400000),
-          status: "OPEN",
+          trainerId: ptSession.trainerId,
+          payPeriodId: openPeriod.id,
+          sessionId: ptSession.id,
+          amount: pay.amount,
+          description: `PT session completion pay (${(pay.rate * 100).toFixed(0)}% of $${ptSession.fee.toFixed(2)})`,
         },
       })
-    }
 
-    await prisma.payRecord.create({
-      data: {
-        trainerId: ptSession.trainerId,
-        payPeriodId: openPeriod.id,
-        sessionId: ptSession.id,
-        amount: trainerPayAmount,
-        description: `PT Session completion pay (${(totalPayRate * 100).toFixed(0)}% rate)`,
-      },
+      return pay
     })
 
     await logAudit({
@@ -538,7 +599,9 @@ export async function endSession(sessionId: string) {
       gymId: ptSession.gymId,
       actionType: "SESSION_OVERRIDDEN",
       affectedRecordId: sessionId,
-      details: { message: `Completed PT Session ${sessionId}, deducted 1 pack session, paid trainer $${trainerPayAmount.toFixed(2)}` },
+      details: {
+        message: `Completed PT session ${sessionId}. Recognised $${ptSession.fee.toFixed(2)}, deducted 1 pack credit, paid trainer $${trainerPay.amount.toFixed(2)}`,
+      },
     })
 
     revalidatePath("/owner/sessions")
@@ -564,46 +627,40 @@ export async function handleNoShow(sessionId: string) {
   }
 
   try {
-    // BR-013 & BR-046: Set MISSED, noShow=true, deduct pack session, 0 trainer pay
-    await prisma.pTSession.update({
-      where: { id: sessionId },
-      data: {
-        status: SessionStatus.MISSED,
-        noShow: true,
-      },
-    })
-
-    const activePack = await prisma.sessionPack.findFirst({
-      where: {
-        userId: ptSession.clientId,
-        status: "ACTIVE",
-        remainingSessions: { gt: 0 },
-      },
-      orderBy: { expiryDate: "asc" },
-    })
-
-    if (activePack) {
-      const newRemaining = activePack.remainingSessions - 1
-      await prisma.sessionPack.update({
-        where: { id: activePack.id },
+    // BR-013 & BR-046: MISSED, credit deducted, no trainer pay. The member
+    // forfeits the session and the gym keeps the money, so the revenue is
+    // earned — recognising it is what stops the burnt credit vanishing from
+    // the books entirely.
+    await prisma.$transaction(async (tx) => {
+      await tx.pTSession.update({
+        where: { id: sessionId },
         data: {
-          remainingSessions: newRemaining,
-          status: newRemaining === 0 ? "EXHAUSTED" : "ACTIVE",
+          status: SessionStatus.MISSED,
+          noShow: true,
         },
       })
-    }
+
+      await consumePackCredit(
+        tx,
+        ptSession,
+        `PT session no-show — credit forfeited (session ${sessionId})`
+      )
+    })
 
     await logAudit({
       userId: session.user.id,
       gymId: ptSession.gymId,
       actionType: "SESSION_CANCELLED",
       affectedRecordId: sessionId,
-      details: { message: `Marked session ${sessionId} as MISSED (No-Show). Deducted 1 pack session with $0 trainer pay.` },
+      details: {
+        message: `Marked session ${sessionId} as MISSED (no-show). Recognised $${ptSession.fee.toFixed(2)}, deducted 1 pack credit, $0 trainer pay.`,
+      },
     })
 
     revalidateSessionPaths()
     return { success: true }
   } catch (err) {
+    console.error("No-show error:", err)
     return { error: "Failed to log no-show session" }
   }
 }
@@ -634,43 +691,37 @@ export async function cancelSession(sessionId: string, reason?: string) {
   const isLateCancel = wasConfirmed && hoursUntilSession < windowHours
 
   try {
-    await prisma.pTSession.update({
-      where: { id: sessionId },
-      data: {
-        status: SessionStatus.CANCELLED,
-        notes: reason ? `${ptSession.notes || ""}\nCancelled: ${reason}` : ptSession.notes,
-      },
-    })
-
-    // BR-012 & BR-047: If late cancellation, deduct 1 session from pack with NO trainer pay
-    if (isLateCancel) {
-      const activePack = await prisma.sessionPack.findFirst({
-        where: {
-          userId: ptSession.clientId,
-          status: "ACTIVE",
-          remainingSessions: { gt: 0 },
+    await prisma.$transaction(async (tx) => {
+      await tx.pTSession.update({
+        where: { id: sessionId },
+        data: {
+          status: SessionStatus.CANCELLED,
+          notes: reason ? `${ptSession.notes || ""}\nCancelled: ${reason}` : ptSession.notes,
         },
-        orderBy: { expiryDate: "asc" },
       })
 
-      if (activePack) {
-        const newRemaining = activePack.remainingSessions - 1
-        await prisma.sessionPack.update({
-          where: { id: activePack.id },
-          data: {
-            remainingSessions: newRemaining,
-            status: newRemaining === 0 ? "EXHAUSTED" : "ACTIVE",
-          },
-        })
+      // BR-012 & BR-047: a late cancellation costs the credit and earns the
+      // gym the fee, with no trainer pay. An on-time one costs nothing, so
+      // nothing is recognised.
+      if (isLateCancel) {
+        await consumePackCredit(
+          tx,
+          ptSession,
+          `PT session cancelled late — credit forfeited (session ${sessionId})`
+        )
       }
-    }
+    })
 
     await logAudit({
       userId: session.user.id,
       gymId: ptSession.gymId,
       actionType: "SESSION_CANCELLED",
       affectedRecordId: sessionId,
-      details: { message: `Cancelled session ${sessionId} (${isLateCancel ? "Late Cancellation - Deducted Pack" : "On-Time Cancellation"})` },
+      details: {
+        message: isLateCancel
+          ? `Cancelled session ${sessionId} late. Recognised $${ptSession.fee.toFixed(2)}, deducted 1 pack credit, $0 trainer pay.`
+          : `Cancelled session ${sessionId} on time. No credit deducted.`,
+      },
     })
 
     revalidateSessionPaths()

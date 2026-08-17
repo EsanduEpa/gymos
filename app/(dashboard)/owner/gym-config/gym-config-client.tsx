@@ -6,17 +6,18 @@ import {
   updateGymProfile,
   createMembershipPlan,
   updateTrainerPayRates,
+  updateSessionRates,
   updateCancellationPolicy,
 } from "@/app/actions/gym-config"
 import { checkMembershipExpiries } from "@/app/actions/members"
-import { Settings, Tag, DollarSign, AlertCircle, CheckCircle2, ShieldAlert } from "lucide-react"
+import { Settings, Tag, DollarSign, AlertCircle, CheckCircle2, ShieldAlert, Receipt } from "lucide-react"
 
 interface GymConfigClientProps {
   gym: any
 }
 
 export function GymConfigClient({ gym }: GymConfigClientProps) {
-  const [activeTab, setActiveTab] = useState<"profile" | "plans" | "rates" | "policy">("profile")
+  const [activeTab, setActiveTab] = useState<"profile" | "plans" | "fees" | "rates" | "policy">("profile")
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [showAddPlan, setShowAddPlan] = useState(false)
@@ -47,6 +48,20 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
     } else {
       setMessage({ type: "success", text: "Membership plan created successfully!" })
       setShowAddPlan(false)
+    }
+  }
+
+  const handleSessionRatesSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setMessage(null)
+    setLoading(true)
+    const formData = new FormData(e.currentTarget)
+    const res = await updateSessionRates(formData)
+    setLoading(false)
+    if (res.error) {
+      setMessage({ type: "error", text: res.error })
+    } else {
+      setMessage({ type: "success", text: "PT session rates updated. Packs and sessions already sold keep their original price." })
     }
   }
 
@@ -142,6 +157,19 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
         >
           <span className="flex items-center gap-2">
             <Tag className="h-4 w-4" /> Membership Plans
+          </span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("fees"); setMessage(null); }}
+          className={`pb-3 px-4 text-xs font-bold transition-colors cursor-pointer border-b-2 ${
+            activeTab === "fees"
+              ? "border-[#007A35] text-[#007A35]"
+              : "border-transparent text-[#8B8E98] hover:text-[#171B28]"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Receipt className="h-4 w-4" /> PT Session Rates
           </span>
         </button>
 
@@ -343,7 +371,88 @@ export function GymConfigClient({ gym }: GymConfigClientProps) {
         </div>
       )}
 
-      {/* Tab 3: Trainer Pay Rates */}
+      {/* Tab 3: PT Session Rates */}
+      {activeTab === "fees" && (
+        <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm max-w-2xl space-y-6">
+          <div className="p-4 rounded-xl bg-[#F5F4F5] border border-[#E1E1E4] text-[#4A4D58] text-xs flex items-start gap-3">
+            <Receipt className="h-5 w-5 shrink-0 mt-0.5 text-[#007A35]" />
+            <div>
+              <p className="font-bold text-[#171B28] mb-1">What a PT session costs at your gym</p>
+              <p>
+                These prices apply to sessions not covered by a session pack, and set the
+                suggested price when you issue a new pack. Changing them never re-prices a
+                pack already sold or a session already booked — those keep the price the
+                member actually paid.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSessionRatesSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="defaultSessionFee" className="block text-xs font-semibold text-[#4A4D58] uppercase tracking-wider mb-2">
+                Standard session rate ($) *
+              </label>
+              <input
+                id="defaultSessionFee"
+                name="defaultSessionFee"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                defaultValue={gym.defaultSessionFee}
+                className="w-full px-3 py-2.5 text-sm bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007A35] focus:bg-white transition-all"
+              />
+              <p className="text-xs text-[#8B8E98] mt-1.5">Charged for a one-hour session with a Level 1 trainer.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="level2SessionFee" className="block text-xs font-semibold text-[#4A4D58] uppercase tracking-wider mb-2">
+                  Level 2 trainer rate ($)
+                </label>
+                <input
+                  id="level2SessionFee"
+                  name="level2SessionFee"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={gym.level2SessionFee ?? ""}
+                  placeholder="Same as standard"
+                  className="w-full px-3 py-2.5 text-sm bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007A35] focus:bg-white transition-all"
+                />
+                <p className="text-xs text-[#8B8E98] mt-1.5">Leave blank to charge the standard rate.</p>
+              </div>
+
+              <div>
+                <label htmlFor="introSessionFee" className="block text-xs font-semibold text-[#4A4D58] uppercase tracking-wider mb-2">
+                  Introductory session ($)
+                </label>
+                <input
+                  id="introSessionFee"
+                  name="introSessionFee"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue={gym.introSessionFee ?? ""}
+                  placeholder="Same as standard"
+                  className="w-full px-3 py-2.5 text-sm bg-[#F5F4F5] border border-[#E1E1E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#007A35] focus:bg-white transition-all"
+                />
+                <p className="text-xs text-[#8B8E98] mt-1.5">Enter 0 for a free first session.</p>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="py-2.5 px-5 bg-[#007A35] hover:bg-[#00622A] text-white font-medium text-sm rounded-lg shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? "Saving..." : "Save session rates"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Tab 4: Trainer Pay Rates */}
       {activeTab === "rates" && (
         <div className="bg-white rounded-xl border border-[#E1E1E4] p-6 shadow-sm max-w-2xl space-y-6">
           <div className="p-4 rounded-xl bg-[#FFF8E6] border border-[#FFE7B3] text-[#B45309] text-xs flex items-start gap-3">

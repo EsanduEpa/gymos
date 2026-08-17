@@ -39,6 +39,7 @@ Two rules of thumb when adding an action:
 | `updateGymProfile` | ✅ | ✅ | — | — | Own gym |
 | `createMembershipPlan` | ✅ | ✅ | — | — | Own gym |
 | `updateTrainerPayRates` | ✅ | ✅ | — | — | Own gym |
+| `updateSessionRates` | ✅ | ✅ | — | — | Own gym |
 | `updateCancellationPolicy` | ✅ | ✅ | — | — | Own gym |
 | **members.ts** |
 | `createMember` | ✅ | ✅ | — | — | Membership plan must belong to the gym |

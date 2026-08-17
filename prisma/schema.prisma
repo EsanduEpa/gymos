@@ -87,6 +87,15 @@ model Gym {
   noShowDeduction         Boolean  @default(true)
   lateCancelDeduction     Boolean  @default(true)
   minSessionDuration      Int      @default(20) // minutes
+
+  // PT session rate card — the list price of a session at this gym. Used to
+  // price session packs and any session not funded by one. A pack, once sold,
+  // records its own price and is unaffected by later edits here.
+  defaultSessionFee       Float    @default(50)
+  level2SessionFee        Float?   // optional premium for LEVEL_2 trainers
+  introSessionFee         Float?   // optional rate for INTRODUCTORY sessions
+
+  // Trainer pay, as a share of the session fee actually charged.
   level1BaseRate          Float    @default(0.4)  // 40%
   level2BaseRate          Float    @default(0.5)  // 50%
   offShiftPremium         Float    @default(0.1)  // 10%
@@ -208,7 +217,9 @@ model PTSession {
   duration    Int      // minutes
   type        SessionType @default(IN_PERSON)
   status      SessionStatus @default(SCHEDULED)
-  fee         Float    @default(50.0)
+  // Price snapshot, resolved at booking. Never re-read from the rate card, so
+  // a later rate change cannot alter a booked session's price or trainer pay.
+  fee         Float
   noShow      Boolean  @default(false)
   notes       String?
   shiftStatus ShiftStatus?
