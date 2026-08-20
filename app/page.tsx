@@ -4,8 +4,11 @@ import { redirect } from "next/navigation"
 export default async function Home() {
   const session = await auth()
 
+  // `?stale` tells proxy.ts to drop the session cookie. Without it, a cookie
+  // this check rejected can still decode in the middleware, which would send
+  // the request back here forever.
   if (!session || !session.user) {
-    redirect("/login")
+    redirect("/login?stale=1")
   }
 
   const role = session.user.role

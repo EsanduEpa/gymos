@@ -12,8 +12,11 @@ export default async function DashboardLayout({
 }) {
   const session = await auth()
 
+  // `?stale` tells proxy.ts to drop the session cookie. The middleware waved
+  // this request through on a raw JWT that `auth()` has just rejected, so
+  // without clearing it the two would bounce the request between them.
   if (!session || !session.user) {
-    redirect("/login")
+    redirect("/login?stale=1")
   }
 
   // Resolves the impersonated gym for a super admin, their own otherwise, so
