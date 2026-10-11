@@ -1,8 +1,10 @@
 "use client"
 
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import AISummaryPanel from "./AISummaryPanel"
 
 interface AnalyticsClientProps {
+  gymId: string
   data: {
     trainerUtilisationData: any[]
     peakHoursData: any[]
@@ -10,7 +12,7 @@ interface AnalyticsClientProps {
   }
 }
 
-export default function AnalyticsClient({ data }: AnalyticsClientProps) {
+export default function AnalyticsClient({ gymId, data }: AnalyticsClientProps) {
   const { trainerUtilisationData, peakHoursData, memberGrowthData } = data
 
   return (
@@ -20,6 +22,10 @@ export default function AnalyticsClient({ data }: AnalyticsClientProps) {
         <p className="text-xs text-[#8B8E98] mt-1">Insights on trainer utilisation, member peak hours, and signup growth.</p>
       </div>
 
+      {/* AI-Powered Weekly Financial Summary */}
+      <AISummaryPanel gymId={gymId} />
+
+      {/* Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 1. Trainer Utilisation Report */}
         <div className="bg-white p-5 rounded-xl border border-[#E1E1E4] shadow-sm">
@@ -55,6 +61,7 @@ export default function AnalyticsClient({ data }: AnalyticsClientProps) {
           </div>
         </div>
       </div>
+
 
       {/* 3. New Member Growth */}
       <div className="bg-white p-5 rounded-xl border border-[#E1E1E4] shadow-sm">

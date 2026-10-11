@@ -160,6 +160,10 @@ model User {
   payRecords          PayRecord[]
   notifications       Notification[]
   auditLogs           AuditLog[]
+  leaderboardOptIn    Boolean           @default(true)
+  attendanceStreak    AttendanceStreak?
+  milestoneBadges     MilestoneBadge[]
+  checkIns            CheckIn[]
 
   @@index([gymId, role])
 }
@@ -494,6 +498,7 @@ enum NotificationType {
   MEMBERSHIP_EXPIRING
   BUDGET_EXCEEDED
   PAYROLL_READY
+  ONBOARDING
 }
 
 model Notification {
@@ -511,3 +516,53 @@ model Notification {
   @@index([recipientId, isRead])
   @@index([recipientId, createdAt])
 }
+
+model CheckIn {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method    String   @default("BIOMETRIC") // BIOMETRIC, MANUAL, QR
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model AttendanceStreak {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  totalVisits     Int       @default(0)
+  lastCheckInDate DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([currentStreak])
+}
+
+enum BadgeType {
+  FIRST_VISIT
+  VISITS_10
+  VISITS_50
+  VISITS_100
+  VISITS_250
+  STREAK_7_DAYS
+  STREAK_30_DAYS
+  STREAK_100_DAYS
+}
+
+model MilestoneBadge {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeType   BadgeType
+  name        String
+  description String
+  icon        String
+  awardedAt   DateTime  @default(now())
+
+  @@unique([userId, badgeType])
+  @@index([userId])
+}
+
