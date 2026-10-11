@@ -1,0 +1,26 @@
+=== GymOS 30-Day Onboarding Sequence: Pre-Deployment Checklist ===
+
+Before deploying the new cron job and onboarding sequence to production, complete the following steps:
+
+1. SET UP THE CRON_SECRET
+   The cron route requires an authorization secret to prevent random users from triggering it.
+   - Generate a strong secret by running this in your terminal:
+     openssl rand -base64 32
+   - Go to your Vercel Project Settings -> Environment Variables.
+   - Add a new variable named CRON_SECRET and paste the generated value.
+   - Also add CRON_SECRET="<your-generated-value>" to your local .env.local file so you can test it locally.
+
+2. RUN THE DATABASE MIGRATION
+   The Prisma schema was updated to include the new 'ONBOARDING' NotificationType.
+   - Make sure to run this command against your production database during or before deployment:
+     npx prisma migrate deploy
+
+3. WIRE UP A REAL EMAIL PROVIDER
+   Currently, the onboarding emails are mocked using console.log.
+   - Open `lib/onboarding.ts` and locate the `sendOnboardingEmail` function.
+   - Replace the console.log mock with your actual email provider SDK (e.g., Resend, SendGrid, Postmark).
+
+4. KEEP PLATFORM LIMITS IN MIND
+   - Vercel Hobby tier limits cron function execution to 10 seconds. Pro/Team gives you up to 300 seconds.
+   - If your user base grows large enough that processing all daily milestones takes too long, you should decouple this: have the cron route push jobs to a message queue (like Vercel Queues or Upstash QStash) instead of awaiting all Prisma and Email calls synchronously.
+

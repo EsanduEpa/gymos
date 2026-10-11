@@ -129,3 +129,37 @@ export async function saveMealPlan(data: {
     return { error: "Failed to save meal plan" }
   }
 }
+
+export async function getMemberPlans() {
+  const auth = await authorize([Role.GYM_MEMBER])
+  if (!auth.ok) return { error: auth.error, workoutPlans: [], mealPlans: [] }
+
+  try {
+    const [workoutPlans, mealPlans] = await Promise.all([
+      prisma.workoutPlan.findMany({
+        where: { clientId: auth.userId },
+        include: {
+          trainer: { select: { fullName: true } },
+          exercises: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.mealPlan.findMany({
+        where: { clientId: auth.userId },
+        include: {
+          trainer: { select: { fullName: true } },
+          entries: {
+            orderBy: [{ dayOfWeek: "asc" }, { mealType: "asc" }],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ])
+
+    return { workoutPlans, mealPlans }
+  } catch (err) {
+    console.error("Get member plans error:", err)
+    return { error: "Failed to load plans", workoutPlans: [], mealPlans: [] }
+  }
+}
+

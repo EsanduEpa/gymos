@@ -15,6 +15,10 @@ import {
   Wallet,
   LogOut,
   UserCheck,
+  UserPlus,
+  ClipboardList,
+  TrendingUp,
+  Trophy,
   X,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
@@ -52,13 +56,18 @@ export function Sidebar({
 
   const trainerNav = [
     { name: "Schedule", href: "/trainer/schedule", icon: Calendar },
+    { name: "Hire Requests", href: "/trainer/hire-requests", icon: UserPlus },
     { name: "Clients", href: "/trainer/clients", icon: Users },
     { name: "Earnings", href: "/trainer/earnings", icon: Wallet },
   ]
 
   const memberNav = [
+    { name: "Dashboard", href: "/member/dashboard", icon: LayoutDashboard },
     { name: "Trainers", href: "/member/trainers", icon: UserCheck },
     { name: "My Sessions", href: "/member/sessions", icon: Calendar },
+    { name: "My Plans", href: "/member/plans", icon: ClipboardList },
+    { name: "Progress", href: "/member/progress", icon: TrendingUp },
+    { name: "Community", href: "/member/community", icon: Trophy },
   ]
 
   // "Owner View" is only reachable once a gym is being impersonated — a super
@@ -135,7 +144,7 @@ export function Sidebar({
             const Icon = item.icon
             const isActive =
               pathname === item.href ||
-              (item.href !== "/owner" && item.href !== "/trainer" && pathname.startsWith(item.href))
+              (item.href !== "/owner" && item.href !== "/trainer" && item.href !== "/member/dashboard" && pathname.startsWith(item.href))
 
             return (
               <Link
